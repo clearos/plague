@@ -2,8 +2,8 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.3.1
-Release: 2
+Version: 0.3.2
+Release: 1
 License: GPL
 Group: Development/Tools
 Source: http://people.redhat.com/dcbw/plague/%{name}-%{version}.tar.bz2
@@ -15,8 +15,6 @@ Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
-
-Patch0: plague-0.3.1-match-enqueue-return-args.patch
 
 %description
 The Plague build system is a client/server distributed build system for
@@ -67,8 +65,6 @@ the interface to the build server.
 
 %prep
 %setup -q
-
-%patch0 -p1 -b .enqueue-fix
 
 %build
 make
@@ -150,9 +146,10 @@ fi
 
 
 %changelog
-* Sun Aug 14 2005 Dan Williams <dcbw@redhat.com> 0.3.1-2
-- Match return arguments for enqueue and enqueue_srpm so that errors are
-    properly returned
+* Mon Aug 15 2005 Dan Williams <dcbw@redhat.com> 0.3.2-1
+- Version 0.3.2
+    o Fix errors in enqueue and enqueue_srpm return values
+    o Implement client/server API versioning
 
 * Thu Aug 11 2005 Dan Williams <dcbw@redhat.com> 0.3.1-1
 - Version 0.3.1
