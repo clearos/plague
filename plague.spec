@@ -2,7 +2,7 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.3.3
+Version: 0.3.4
 Release: 1%{?dist}
 License: GPL
 Group: Development/Tools
@@ -146,11 +146,19 @@ fi
 
 
 %changelog
-* Mon Aug 15 2005 Dan Williams <dcbw@redhat.com> 0.3.3-1
+* Tue Aug 23 2005 Dan Williams <dcbw@redhat.com> 0.3.4-1
+- Version 0.3.4
+    o Make repo scripts actually work
+    o Don't traceback when cleaning up job files if we have none
+
+* Mon Aug 19 2005 Dan Williams <dcbw@redhat.com> 0.3.3-1
 - Version 0.3.3
     o Add repo script support
     o Fix double-slashes in log URL (Ignacio Vazquez-Abrams)
     o Clear out old job info when requeueing jobs
+
+* Mon Aug 15 2005 Dan Williams <dcbw@redhat.com> 0.3.2-3
+- Clear out old job info when requeueing jobs
 
 * Mon Aug 15 2005 Dan Williams <dcbw@redhat.com> 0.3.2-2
 - Append %{?dist} to Releases to get correct precedence on FC3, FC4, and Rawhide
