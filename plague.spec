@@ -2,12 +2,12 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.3.4
+Version: 0.4
 Release: 1%{?dist}
 License: GPL
 Group: Development/Tools
-Source: http://people.redhat.com/dcbw/plague/%{name}-%{version}.tar.bz2
-URL: http://people.redhat.com/dcbw/plague
+Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
+URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: python-sqlite, createrepo
 Requires: %{name}-common = %{version}-%{release}
@@ -114,10 +114,7 @@ fi
 %dir %{_datadir}/%{name}/server
 %{_datadir}/%{name}/server/*.py*
 %dir %{_sysconfdir}/%{name}/server
-%config(noreplace) %{_sysconfdir}/%{name}/server/CONFIG.py*
 %dir %{_sysconfdir}/%{name}/server/certs
-%dir %{_sysconfdir}/%{name}/server/addl_pkg_arches
-%{_sysconfdir}/%{name}/server/addl_pkg_arches/*
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-server
 %{_initrddir}/%{name}-server
 
@@ -128,9 +125,10 @@ fi
 %files builder
 %defattr(-, root, root)
 %{_bindir}/%{name}-builder
-%dir  %{_sysconfdir}/%{name}/builder
-%config(noreplace) %{_sysconfdir}/%{name}/builder/CONFIG.py*
-%dir  %{_sysconfdir}/%{name}/builder/certs
+%dir %{_datadir}/%{name}/builder
+%{_datadir}/%{name}/builder/*.py*
+%dir %{_sysconfdir}/%{name}/builder
+%dir %{_sysconfdir}/%{name}/builder/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-builder
 %{_initrddir}/%{name}-builder
 %attr(0755, plague-builder, plague-builder) /srv/plague_builder
@@ -146,6 +144,26 @@ fi
 
 
 %changelog
+* Sun Oct 16 2005 Dan Williams <dcbw@redhat.com> 0.4-1
+- Version 0.4
+    o Server:
+        - Per-target config files, new format
+        - Support PostgreSQL as a database backend
+
+    o Builder:
+        - Multiple concurrent builds with one builder process
+        - Better tracking of mock child processes
+        - Autodetect supported architectures and number of
+            concurrent build processes
+        - Per-target config files, new format
+
+    o Client:
+        - Ability to upload packages to server
+
+    o Utilities:
+        - New distro-rebuild.py utility
+        - Fixes for certhelper.py
+
 * Tue Aug 23 2005 Dan Williams <dcbw@redhat.com> 0.3.4-1
 - Version 0.3.4
     o Make repo scripts actually work
