@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,11 @@ fi
 
 
 %changelog
+* Mon Oct 17 2005 Dan Williams <dcbw@redhat.com> 0.4-2
+- Increase field size of 'username' and 'status' fields when
+	we initially create them on the server.  Server ops will
+	need to increase manually or blow away their jobdb.
+
 * Sun Oct 16 2005 Dan Williams <dcbw@redhat.com> 0.4-1
 - Version 0.4
     o Server:
