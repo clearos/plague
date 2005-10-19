@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,9 @@ fi
 
 
 %changelog
+* Wed Oct 19 2005 Dan Williams <dcbw@redhat.com> 0.4-4
+- Really fix client's "allow_uploads" problem
+
 * Wed Oct 19 2005 Dan Williams <dcbw@redhat.com> 0.4-3
 - Fix errors in client's 'job detail' function
 - Ignore missing "allow_uploads" option in client config file
