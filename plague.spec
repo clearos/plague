@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,12 @@ fi
 
 
 %changelog
+* Tue Oct 25 2005 Dan Williams <dcbw@redhat.com> 0.4-5
+- Add a MySQL database backend (Jeff Sheltren)
+- Trap repo copy errors rather than doing a traceback
+- On the builder, deal correctly with jobs in 'downloaded' state
+    that have been killed
+
 * Wed Oct 19 2005 Dan Williams <dcbw@redhat.com> 0.4-4
 - Really fix client's "allow_uploads" problem
 
