@@ -2,8 +2,8 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4
-Release: 5%{?dist}
+Version: 0.4.1
+Release: 1%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,16 @@ fi
 
 
 %changelog
+* Mon Oct 31 2005 Dan Williams <dcbw@redhat.com> 0.4.1-1
+- Fail jobs on restart if we can't access the original SRPM
+- For the server, honor config file location passed in on
+	the command line (Jeff Sheltren)
+- Catch another mock failure case (Alexandr Kanevskiy)
+
+* Tue Oct 25 2005 Dan Williams <dcbw@redhat.com> 0.4-6
+- Retry downloads from builders up to 3 times before failing
+    the job
+
 * Tue Oct 25 2005 Dan Williams <dcbw@redhat.com> 0.4-5
 - Add a MySQL database backend (Jeff Sheltren)
 - Trap repo copy errors rather than doing a traceback
