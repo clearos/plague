@@ -2,7 +2,7 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.1
+Version: 0.4.2
 Release: 1%{?dist}
 License: GPL
 Group: Development/Tools
@@ -144,6 +144,10 @@ fi
 
 
 %changelog
+* Tue Nov  1 2005 Dan Williams <dcbw@redhat.com> 0.4.2-1
+- Fix job download from the builders
+- Fix RPM copy to the repository on the server
+
 * Mon Oct 31 2005 Dan Williams <dcbw@redhat.com> 0.4.1-1
 - Fail jobs on restart if we can't access the original SRPM
 - For the server, honor config file location passed in on
