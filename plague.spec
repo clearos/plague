@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,9 @@ fi
 
 
 %changelog
+* Tue Nov  1 2005 Dan Williams <dcbw@redhat.com> 0.4.2-2
+- Make builders retry downloads from the server up to 3 times
+
 * Tue Nov  1 2005 Dan Williams <dcbw@redhat.com> 0.4.2-1
 - Fix job download from the builders
 - Fix RPM copy to the repository on the server
