@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.2
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,13 @@ fi
 
 
 %changelog
+* Sun Nov 13 2005 Dan Williams <dcbw@redhat.com> 0.4.2-3
+- Hopefully fix builds not moving past downloading/done
+- Immediately kill jobs in the 'waiting' state when requested
+- Utilize pthread_sigmask python module, if present, on Python
+    2.3 and earlier to work around signal blocking issues in
+    Python
+
 * Tue Nov  1 2005 Dan Williams <dcbw@redhat.com> 0.4.2-2
 - Make builders retry downloads from the server up to 3 times
 
