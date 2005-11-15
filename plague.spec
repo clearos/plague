@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.2
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,9 @@ fi
 
 
 %changelog
+* Tue Nov 15 2005 Dan Williams <dcbw@redhat.com> 0.4.2-5
+- Log kill requests on the server
+
 * Mon Nov 14 2005 Dan Williams <dcbw@redhat.com> 0.4.2-4
 - In the builder, close files we open before exec-ing the
     child process.  Fixes massive file descriptor leaks.
