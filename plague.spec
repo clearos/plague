@@ -2,8 +2,8 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.2
-Release: 7%{?dist}
+Version: 0.4.3
+Release: 1%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,9 @@ fi
 
 
 %changelog
+* Thu Nov 24 2005 Dan Williams <dcbw@redhat.com> 0.4.3-1
+- Add socket timeouts for fileserver and xmlrpc bits
+
 * Fri Nov 18 2005 Dan Williams <dcbw@redhat.com> 0.4.2-7
 - Suspend builders on hard errors such as running out of disk space
 - Retry downloads from server/builder 5 times, not 3
