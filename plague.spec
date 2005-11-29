@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.3
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -109,7 +109,6 @@ fi
 
 %files
 %defattr(-, root, root)
-%doc README ChangeLog
 %{_bindir}/%{name}-server
 %dir %{_datadir}/%{name}/server
 %{_datadir}/%{name}/server/*.py*
@@ -120,6 +119,7 @@ fi
 
 %files common
 %defattr(-, root, root)
+%doc README ChangeLog
 /usr/lib/python?.?/site-packages/plague/*.py*
 
 %files builder
@@ -144,6 +144,11 @@ fi
 
 
 %changelog
+* Tue Nov 29 2005 Dan Williams <dcbw@redhat.com> 0.4.3-2
+- Move README and ChangeLog to -common package
+- Traceback/debug functionality added in server, depends on
+    threadframe module from elsewhere.  Disabled by default.
+
 * Thu Nov 24 2005 Dan Williams <dcbw@redhat.com> 0.4.3-1
 - Add socket timeouts for fileserver and xmlrpc bits
 
