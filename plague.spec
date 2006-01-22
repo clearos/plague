@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.3
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,10 @@ fi
 
 
 %changelog
+* Sun Jan 22 2006 Dan Williams <dcbw@redhat.com> 0.4.3-3
+- Don't traceback when killing jobs on builders
+- Work around SSL hanging issues
+
 * Tue Nov 29 2005 Dan Williams <dcbw@redhat.com> 0.4.3-2
 - Move README and ChangeLog to -common package
 - Traceback/debug functionality added in server, depends on
