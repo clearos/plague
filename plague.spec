@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.3
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,9 @@ fi
 
 
 %changelog
+* Mon Jan 23 2006 Dan Williams <dcbw@redhat.com> 0.4.3-5
+- Restore builder connection timeout
+
 * Mon Jan 23 2006 Dan Williams <dcbw@redhat.com> 0.4.3-4
 - Revert SSL fixes from last build
 
