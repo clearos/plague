@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.3
-Release: 5%{?dist}
+Release: 6%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -144,6 +144,11 @@ fi
 
 
 %changelog
+* Tue Jan 24 2006 Dan Williams <dcbw@redhat.com> 0.4.3-6
+- Increase build server builder thread sleep time to work around SSL issues
+- Spawn mock in a new process group, and when killing jobs kill the entire
+    process group.  Hopefully fix orphaned rpmbuild processes on job kill
+
 * Mon Jan 23 2006 Dan Williams <dcbw@redhat.com> 0.4.3-5
 - Restore builder connection timeout
 
