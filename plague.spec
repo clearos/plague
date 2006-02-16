@@ -9,7 +9,7 @@ Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires: python-sqlite, createrepo
+Requires: python-sqlite, createrepo >= 4.3
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
@@ -120,7 +120,8 @@ fi
 %files common
 %defattr(-, root, root)
 %doc README ChangeLog
-/usr/lib/python?.?/site-packages/plague/*.py*
+%dir /usr/lib/python?.?/site-packages/%{name}
+/usr/lib/python?.?/site-packages/%{name}/*.py*
 
 %files builder
 %defattr(-, root, root)
@@ -144,6 +145,10 @@ fi
 
 
 %changelog
+* -------
+- Own /usr/lib/python?.?/site-packages/plague (#rh172794#)
+- Require createrepo >= 4.3 (#rh170531#)
+
 * Tue Jan 24 2006 Dan Williams <dcbw@redhat.com> 0.4.3-6
 - Increase build server builder thread sleep time to work around SSL issues
 - Spawn mock in a new process group, and when killing jobs kill the entire
