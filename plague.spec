@@ -2,8 +2,8 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.3
-Release: 6%{?dist}
+Version: 0.4.4
+Release: 1%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -145,7 +145,15 @@ fi
 
 
 %changelog
-* -------
+* Sun Mar 12 2006 Dan Williams <dcbw@redhat.com> 0.4.4-1
+- Update to 0.4.4 release
+    - Don't use pyOpenSSL's sendall() call, but simulate it to achieve
+        timeouts, better error handling, and more efficient CPU usage
+    - Fix up initscripts and lifecycle management
+    - Implement a TERM handler in server & builder for clean shutdown
+    - Ensure jobs don't hang around on builders if they get left there for
+        some reason (ie, server didn't unlock repo for the job)
+    - Make Additional Package Arches really work (kmod support)
 - Own /usr/lib/python?.?/site-packages/plague (#rh172794#)
 - Require createrepo >= 4.3 (#rh170531#)
 
