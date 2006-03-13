@@ -2,14 +2,14 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.4
+Version: 0.4.4.1
 Release: 1%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires: python-sqlite, createrepo >= 4.3
+Requires: python-sqlite, createrepo >= 0.4.3
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
@@ -145,6 +145,10 @@ fi
 
 
 %changelog
+* Mon Mar 13 2006 Dan Williams <dcbw@redhat.com> 0.4.4.1-1
+- Update to 0.4.4.1
+- Fix createrepo dep to >= 0.4.3 (#rh170531)
+
 * Sun Mar 12 2006 Dan Williams <dcbw@redhat.com> 0.4.4-1
 - Update to 0.4.4 release
     - Don't use pyOpenSSL's sendall() call, but simulate it to achieve
