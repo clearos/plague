@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.4.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -16,6 +16,7 @@ Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
 
+Patch0: plague-0.4-daemonize.patch
 %description
 The Plague build system is a client/server distributed build system for
 building RPM packages.  This package provides the plague server.
@@ -65,6 +66,7 @@ the interface to the build server.
 
 %prep
 %setup -q
+%patch0 -p0 -b .umask
 
 %build
 make
@@ -145,6 +147,9 @@ fi
 
 
 %changelog
+* Thu Sep 14 2006 Dennis Gilmore <dennis@ausil.us> 0.4.4.0-2
+- add patch  for bad umask setting
+
 * Mon Mar 13 2006 Dan Williams <dcbw@redhat.com> 0.4.4.1-1
 - Update to 0.4.4.1
 - Fix createrepo dep to >= 0.4.3 (#rh170531)
