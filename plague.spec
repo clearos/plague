@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.4.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -147,6 +147,9 @@ fi
 
 
 %changelog
+* Thu Dec 14 2006 Jason L Tibbitts III <tibbs@math.uh.edu> - 0.4.4.1-3
+- Rebuild for new Python
+
 * Thu Sep 14 2006 Dennis Gilmore <dennis@ausil.us> 0.4.4.0-2
 - add patch  for bad umask setting
 
