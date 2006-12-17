@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.4.1
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -17,6 +17,8 @@ Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
 
 Patch0: plague-0.4-daemonize.patch
+Patch1: plague-0.4-py25.patch
+
 %description
 The Plague build system is a client/server distributed build system for
 building RPM packages.  This package provides the plague server.
@@ -67,6 +69,7 @@ the interface to the build server.
 %prep
 %setup -q
 %patch0 -p0 -b .umask
+%patch1 -p1 -b .py25
 
 %build
 make
@@ -147,6 +150,10 @@ fi
 
 
 %changelog
+* Fri Dec 15 2006 Toshio Kuratomi <toshio@tiki-lounge.com> - 0.4.4.1-4
+- Small fix for a change in python 2.5's xmlrpc library.  The patch has been
+  upstreamed.
+
 * Thu Dec 14 2006 Jason L Tibbitts III <tibbs@math.uh.edu> - 0.4.4.1-3
 - Rebuild for new Python
 
