@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.4.1
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: GPL
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -125,6 +125,8 @@ fi
 %files common
 %defattr(-, root, root)
 %doc README ChangeLog
+%dir %{_sysconfdir}/%{name}
+%dir %{_datadir}/%{name}
 %dir /usr/lib/python?.?/site-packages/%{name}
 /usr/lib/python?.?/site-packages/%{name}/*.py*
 
@@ -150,6 +152,10 @@ fi
 
 
 %changelog
+* Tue Sep 18 2007 Michael Schwendt <mschwendt@users.sf.net> - 0.4.4.1-5
+- Add dirs /etc/plague and /usr/share/plague to plague-common
+  since "plague-builder" and "plague" use them (#233904).
+
 * Fri Dec 15 2006 Toshio Kuratomi <toshio@tiki-lounge.com> - 0.4.4.1-4
 - Small fix for a change in python 2.5's xmlrpc library.  The patch has been
   upstreamed.
