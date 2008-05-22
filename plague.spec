@@ -3,8 +3,8 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.4.1
-Release: 5%{?dist}
-License: GPL
+Release: 6%{?dist}
+License: GPLv2+
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
@@ -152,6 +152,9 @@ fi
 
 
 %changelog
+* Thu May 22 2008 Seth Vidal <skvidal at fedoraproject.org> - 0.4.4.1-6
+- licensing tag fix
+
 * Tue Sep 18 2007 Michael Schwendt <mschwendt@users.sf.net> - 0.4.4.1-5
 - Add dirs /etc/plague and /usr/share/plague to plague-common
   since "plague-builder" and "plague" use them (#233904).
