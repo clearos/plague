@@ -2,22 +2,20 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.4.1
-Release: 6%{?dist}
+Version: 0.4.5
+Release: 1%{?dist}
 License: GPLv2+
 Group: Development/Tools
 Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRequires: python
 Requires: python-sqlite, createrepo >= 0.4.3
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
-
-Patch0: plague-0.4-daemonize.patch
-Patch1: plague-0.4-py25.patch
 
 %description
 The Plague build system is a client/server distributed build system for
@@ -68,8 +66,6 @@ the interface to the build server.
 
 %prep
 %setup -q
-%patch0 -p0 -b .umask
-%patch1 -p1 -b .py25
 
 %build
 make
@@ -152,6 +148,9 @@ fi
 
 
 %changelog
+* Tue Sep 02 2008 Dennis Gilmore <dennis@ausil.us> - 0.4.5-1
+- update to 0.4.5  lots of fixes 
+
 * Thu May 22 2008 Seth Vidal <skvidal at fedoraproject.org> - 0.4.4.1-6
 - licensing tag fix
 
