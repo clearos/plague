@@ -3,19 +3,25 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2+
 Group: Development/Tools
-Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
+#Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
+Source: %{name}-%{version}.tar.bz2
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
-Requires: python-sqlite, createrepo >= 0.4.3
+Requires: createrepo >= 0.4.3
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
+
+Patch1: plague-0.4.5-sqlite3.patch
+Patch2: plague-0.4.5-mock-0.8.patch
+Patch3: plague-0.4.5-logtail.patch
+
 
 %description
 The Plague build system is a client/server distributed build system for
@@ -28,14 +34,20 @@ Group: Development/Tools
 Requires: pyOpenSSL
 
 %description common
-This package includes the common Python module that all Plague services require.
+This package includes the common Python module that all Plague services
+require.
 
 
 %package builder
 Summary: Builder daemon for Plague builder slaves
 Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
-Requires: yum >= 2.2.1, mock >= 0.3
+Requires: yum >= 2.2.1
+%if 0%{?fedora} > 6
+Requires: mock >= 0.8
+%else
+Requires: mock < 0.8
+%endif
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
@@ -51,7 +63,8 @@ Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
 
 %description client
-Client program for enqueueing package builds and interrogating the build system.
+Client program for enqueueing package builds and interrogating the build
+system.
 
 
 %package utils
@@ -66,6 +79,12 @@ the interface to the build server.
 
 %prep
 %setup -q
+%if 0%{?fedora} > 6
+%patch1 -p1 -b .sqlite3
+%patch2 -p1 -b .mock8
+%endif
+%patch3 -p1 -b .logtail
+
 
 %build
 make
@@ -73,12 +92,13 @@ make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT install
-install -D -m 0644 etc/plague-builder.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-builder
-install -D -m 0755 etc/plague-builder.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-builder
-install -D -m 0644 etc/plague-server.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-server
-install -D -m 0755 etc/plague-server.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-server
-mkdir -p $RPM_BUILD_ROOT/srv/plague_builder
+make DESTDIR=$RPM_BUILD_ROOT INSTALL="install -p" install
+chmod +x $RPM_BUILD_ROOT%{_bindir}/*
+install -p -D -m 0644 etc/plague-builder.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-builder
+install -p -D -m 0755 etc/plague-builder.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-builder
+install -p -D -m 0644 etc/plague-server.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-server
+install -p -D -m 0755 etc/plague-server.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-server
+mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %clean
@@ -96,7 +116,7 @@ if [ $1 = 0 ]; then
 fi
 
 %pre builder
-/usr/sbin/useradd -G mock -s /sbin/nologin -M -r -d /srv/plague_builder plague-builder 2>/dev/null || :
+/usr/sbin/useradd -G mock -s /sbin/nologin -M -r -d /var/lib/plague/builder plague-builder 2>/dev/null || :
 
 %post builder
 /sbin/chkconfig --add plague-builder
@@ -135,7 +155,8 @@ fi
 %dir %{_sysconfdir}/%{name}/builder/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-builder
 %{_initrddir}/%{name}-builder
-%attr(0755, plague-builder, plague-builder) /srv/plague_builder
+%dir /var/lib/plague
+%attr(0755, plague-builder, plague-builder) /var/lib/plague/builder
 
 %files client
 %defattr(-, root, root)
@@ -148,13 +169,17 @@ fi
 
 
 %changelog
+* Wed Sep  3 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5-2
+- add the patches from 0.4.5-0.4 (sqlite3, mock08, logtail)
+- merge more spec changes
+
 * Tue Sep 02 2008 Dennis Gilmore <dennis@ausil.us> - 0.4.5-1
 - update to 0.4.5  lots of fixes 
 
 * Thu May 22 2008 Seth Vidal <skvidal at fedoraproject.org> - 0.4.4.1-6
 - licensing tag fix
 
-* Tue Sep 18 2007 Michael Schwendt <mschwendt@users.sf.net> - 0.4.4.1-5
+* Tue Sep 18 2007 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.4.1-5
 - Add dirs /etc/plague and /usr/share/plague to plague-common
   since "plague-builder" and "plague" use them (#233904).
 
@@ -321,7 +346,7 @@ fi
 
 * Sat Jul 16 2005 Dan Williams <dcbw@redhat.com>
 - Bump version to 0.2
-- Grab python files from /usr/lib, not %{_libdir} until the
+- Grab python files from /usr/lib, not %%{_libdir} until the
     multiarch issues get worked out
 
 * Sun Jun 26 2005 Dan Williams <dcbw@redhat.com>
