@@ -2,8 +2,8 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.5
-Release: 2%{?dist}
+Version: 0.4.5.1
+Release: 1%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -11,16 +11,20 @@ Source: %{name}-%{version}.tar.bz2
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
-Requires: createrepo >= 0.4.3
+Requires: createrepo >= 0.4.7
+# get the version of the sqlite api thats available to us
+%if 0%{?rhel}
+Requires: python-sqlite
+%else
+Requires: python-sqlite2
+%endif
+
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
 
-Patch1: plague-0.4.5-sqlite3.patch
-Patch2: plague-0.4.5-mock-0.8.patch
-Patch3: plague-0.4.5-logtail.patch
 
 
 %description
@@ -43,11 +47,7 @@ Summary: Builder daemon for Plague builder slaves
 Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
 Requires: yum >= 2.2.1
-%if 0%{?fedora} > 6
 Requires: mock >= 0.8
-%else
-Requires: mock < 0.8
-%endif
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
@@ -79,11 +79,6 @@ the interface to the build server.
 
 %prep
 %setup -q
-%if 0%{?fedora} > 6
-%patch1 -p1 -b .sqlite3
-%patch2 -p1 -b .mock8
-%endif
-%patch3 -p1 -b .logtail
 
 
 %build
@@ -164,11 +159,17 @@ fi
 
 %files utils
 %defattr(-, root, root)
-%{_bindir}/%{name}-user-manager.py*
-%{_bindir}/%{name}-certhelper.py*
+%{_bindir}/%{name}-user-manager
+%{_bindir}/%{name}-certhelper
 
 
 %changelog
+* Wed Sep 03 2008 Dennis Gilmore <dennis@ausil.us> - 0.4.5.1-1
+- update to 0.4.5.1  applying Michael schwendt's logging and mock patches
+- using pysqlite2 on fedora and python-sqlite on RHEL
+- requires mock > 0.8
+- requires createrepo >= 0.4.7
+
 * Wed Sep  3 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5-2
 - add the patches from 0.4.5-0.4 (sqlite3, mock08, logtail)
 - merge more spec changes
