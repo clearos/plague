@@ -2,7 +2,7 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.5.1
+Version: 0.4.5.2
 Release: 1%{?dist}
 License: GPLv2+
 Group: Development/Tools
@@ -71,6 +71,7 @@ system.
 Summary: Utility programs for the Plague build system
 Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
+Requires: %{name} = %{version}-%{release}
 
 %description utils
 This package includes user utilities for the Plague build system, including
@@ -164,6 +165,9 @@ fi
 
 
 %changelog
+* Thu Sep 04 2008 Dennis Gilmore <dennis@ausil.us> - 0.4.5.2-1
+- fix bug in find option to plague-user-manager
+
 * Wed Sep 03 2008 Dennis Gilmore <dennis@ausil.us> - 0.4.5.1-1
 - update to 0.4.5.1  applying Michael schwendt's logging and mock patches
 - using pysqlite2 on fedora and python-sqlite on RHEL
