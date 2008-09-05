@@ -2,7 +2,7 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.5.2
+Version: 0.4.5.3
 Release: 1%{?dist}
 License: GPLv2+
 Group: Development/Tools
@@ -24,7 +24,6 @@ Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
-
 
 
 %description
@@ -133,6 +132,7 @@ fi
 %dir %{_sysconfdir}/%{name}/server/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-server
 %{_initrddir}/%{name}-server
+%doc www
 
 %files common
 %defattr(-, root, root)
@@ -165,6 +165,11 @@ fi
 
 
 %changelog
+* Fri Sep  5 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.3-1
+- update to 0.4.5.3 for sqlite2 compatibility fixes for Fedora
+- merge fedora pkg spec changes
+- include the www tree as server pkg docs
+
 * Thu Sep 04 2008 Dennis Gilmore <dennis@ausil.us> - 0.4.5.2-1
 - fix bug in find option to plague-user-manager
 
