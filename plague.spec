@@ -2,13 +2,12 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.5.3
-Release: 2%{?dist}
+Version: 0.4.5.4
+Release: 1%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 Source: %{name}-%{version}.tar.bz2
-Patch0: plague-0.4.5.3-mod_user.patch
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
@@ -80,7 +79,6 @@ the interface to the build server.
 
 %prep
 %setup -q
-%patch0 -p1 -b .user_mod
 
 
 %build
@@ -167,6 +165,9 @@ fi
 
 
 %changelog
+* Sun Sep 07 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.4-1
+- update to 0.4.5.4 to make it work with MySQL 5
+
 * Sun Sep  7 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.3-2
 - fix mod_user in plague-user-manager for sqlite2/3
 
