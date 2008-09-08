@@ -2,7 +2,7 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.5.4
+Version: 0.4.5.5
 Release: 1%{?dist}
 License: GPLv2+
 Group: Development/Tools
@@ -165,6 +165,9 @@ fi
 
 
 %changelog
+* Mon Sep  8 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.5-1
+- update to 0.4.5.5
+
 * Sun Sep 07 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.4-1
 - update to 0.4.5.4 to make it work with MySQL 5
 
