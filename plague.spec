@@ -3,11 +3,12 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.5
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 Source: %{name}-%{version}.tar.bz2
+Patch1: plague-0.4.5.5-sqlite-alter.patch
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
@@ -79,6 +80,7 @@ the interface to the build server.
 
 %prep
 %setup -q
+%patch1 -p1 -b .sqlite-alter
 
 
 %build
@@ -165,6 +167,9 @@ fi
 
 
 %changelog
+* Sat Sep 20 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.5-2
+- add fix for sqlite's limited ALTER TABLE
+
 * Mon Sep  8 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.5-1
 - update to 0.4.5.5
 

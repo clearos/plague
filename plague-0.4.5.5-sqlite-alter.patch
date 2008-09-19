@@ -1,0 +1,67 @@
+diff -Nur plague-0.4.5.5-orig/server/DBManager.py plague-0.4.5.5/server/DBManager.py
+--- plague-0.4.5.5-orig/server/DBManager.py	2008-09-08 17:56:46.000000000 +0200
++++ plague-0.4.5.5/server/DBManager.py	2008-09-20 01:26:20.000000000 +0200
+@@ -312,6 +312,7 @@
+         if not dbcx:
+             os._exit(1)
+         self._ensure_tables(dbcx)
++        self._fix_tables(dbcx)
+         del dbcx
+ 
+     def dbcx(self):
+@@ -358,22 +359,6 @@
+                 print "Could not access the job database.  Reason: '%s'.  Exiting..." % e
+                 os._exit(1)
+ 
+-        # Rename columns in jobs table, because `RELEASE` is a new
+-        # reserved keyword in MySQL 5, and the quote character is
+-        # different for Postgresql.
+-        for i in range(len(curs.description or [])):
+-            if curs.description[i][0].upper() == 'RELEASE':
+-                if self.engine == 'mysql':
+-                    curs.execute('ALTER TABLE jobs CHANGE `release` rpm_release VARCHAR(25);')
+-                    curs.execute('ALTER TABLE jobs CHANGE `version` rpm_version VARCHAR(25);')
+-                    curs.execute('ALTER TABLE jobs CHANGE `epoch` rpm_epoch VARCHAR(4);')
+-                else:
+-                    curs.execute('ALTER TABLE jobs CHANGE release rpm_release VARCHAR(25);')
+-                    curs.execute('ALTER TABLE jobs CHANGE version rpm_version VARCHAR(25);')
+-                    curs.execute('ALTER TABLE jobs CHANGE epoch rpm_epoch VARCHAR(4);')
+-                dbcx.commit()
+-                break
+-
+         # Create the archjobs table
+         try:
+             curs.execute('SELECT * FROM archjobs LIMIT 4')
+@@ -396,3 +381,32 @@
+                 print "Could not access the job database.  Reason: '%s'.  Exiting..." % e
+                 os._exit(1)
+ 
++    def _fix_tables(self, dbcx):
++        """ Fix database tables for compatibility with e.g. MySQL 5 """
++
++        # Rename columns in jobs table, because `RELEASE` is a new
++        # reserved keyword in MySQL 5, and the quote character is
++        # different for Postgresql.
++        curs = dbcx.cursor()
++        curs.execute('SELECT * FROM jobs LIMIT 1')
++        for i in range(len(curs.description or [])):
++            if curs.description[i][0].upper() == 'RELEASE':
++                if self.engine == 'mysql':
++                    curs.execute('ALTER TABLE jobs CHANGE `release` rpm_release VARCHAR(25);')
++                    curs.execute('ALTER TABLE jobs CHANGE `version` rpm_version VARCHAR(25);')
++                    curs.execute('ALTER TABLE jobs CHANGE `epoch` rpm_epoch VARCHAR(4);')
++                    dbcx.commit()
++                elif self.engine == 'sqlite':
++                    # No column rename available, so reconstruct a new table.
++                    curs.execute('ALTER TABLE jobs RENAME TO oldjobs;')
++                    self._ensure_tables(dbcx)
++                    curs.execute('INSERT INTO jobs SELECT * FROM oldjobs;')
++                    curs.execute('DROP TABLE oldjobs;')
++                    dbcx.commit()
++                else:
++                    curs.execute('ALTER TABLE jobs CHANGE release rpm_release VARCHAR(25);')
++                    curs.execute('ALTER TABLE jobs CHANGE version rpm_version VARCHAR(25);')
++                    curs.execute('ALTER TABLE jobs CHANGE epoch rpm_epoch VARCHAR(4);')
++                    dbcx.commit()
++                break
++
