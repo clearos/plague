@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.7
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -165,6 +165,9 @@ fi
 
 
 %changelog
+* Sat Nov 29 2008 Ignacio Vazquez-Abrams <ivazqueznet+rpm@gmail.com> - 0.4.5.7-2
+- Rebuild for Python 2.6
+
 * Wed Nov  5 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.7-1
 - update to 0.4.5.7 (Python 2.4 fix and optional POSIX lockfile support)
 
