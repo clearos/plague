@@ -1,0 +1,221 @@
+diff -Nur plague-0.4.5.7-orig/builder/builder.py plague-0.4.5.7/builder/builder.py
+--- plague-0.4.5.7-orig/builder/builder.py	2008-09-05 11:17:27.000000000 +0200
++++ plague-0.4.5.7/builder/builder.py	2008-12-16 20:29:08.000000000 +0100
+@@ -19,9 +19,12 @@
+ import socket
+ import os
+ import shutil
+-import sha
+ import time
+ import sys
++if sys.version_info[0:2] < (2,6):
++    import sha
++else:
++    import hashlib
+ import string
+ import time
+ import fcntl
+@@ -359,7 +362,7 @@
+             # something is wrong if mock takes more than 15s to write the status file
+             if time.time() > self._mockstarttime + 15:
+                 self._mockstarttime = 0
+-                self._log("ERROR: Timed out waiting for the mock status file!  %s\n" % mockstatusfile)
++                self._log("ERROR: Timed out waiting for the mock status file!  %s\n" % self._state_file)
+                 self.die()
+         else:
+             if not self._mock_config and self._mock_is_prepping():
+@@ -555,7 +558,10 @@
+             print string
+ 
+     def _generate_uniqid(self, target_str, srpm_url):
+-        sum = sha.new()
++        if sys.version_info[0:2] < (2,6):
++            sum = sha.new()
++        else:
++            sum = hashlib.sha1()
+         sum.update('%d %s %s' % (time.time(), target_str, srpm_url))
+         return sum.hexdigest()
+ 
+@@ -599,12 +605,11 @@
+ 
+         self._building_jobs_lock.acquire()
+         num_building = len(self._building_jobs)
++        self._building_jobs_lock.release()
+         if num_building >= self._max_jobs:
+             self._log("Tried to build '%s' on target %s when already building" \
+                         " %d/%d jobs" % (srpm_url, target_str, num_building, self._max_jobs))
+-            self._building_jobs_lock.release()
+             return 0
+-        self._building_jobs_lock.release()
+ 
+         target_cfg = self._get_target_cfg(target_dict)
+         if not target_cfg:
+diff -Nur plague-0.4.5.7-orig/ChangeLog plague-0.4.5.7/ChangeLog
+--- plague-0.4.5.7-orig/ChangeLog	2008-11-05 12:51:10.000000000 +0100
++++ plague-0.4.5.7/ChangeLog	2008-12-16 23:34:30.000000000 +0100
+@@ -1,6 +1,38 @@
++2008-12-16  Michael Schwendt <mschwendt@fedoraproject.org>
++
++	* common/SSLCommon.py
++	  - Catch EINTR in serve_forever to avoid breakage with
++	    Python 2.6.
++	
++	* common/FileDownloader.py
++	  - Fix dl_callback number of args for test suite.
++	
++	* builder/builder.py
++	  - Fix mock state file timeout error msg traceback.
++	  - With Python >= 2.6 use "hashlib" not "sha" to
++	    avoid the ugly deprecation warning.
++
++2008-12-10  Michael Schwendt <mschwendt@fedoraproject.org>
++
++	* server/Repo.py
++	  - With Python >= 2.6 use "subprocess" not "popen2" to
++	    avoid the ugly deprecation warning.
++
++2008-11-17  Michael Schwendt <mschwendt@fedoraproject.org>
++
++	* common/SSLConnection.py
++	  - Fix initial reference count (set to 1)
++	    and the comments about shutdown().
++
++2008-11-13  Michael Schwendt <mschwendt@fedoraproject.org>
++
++	* builder/builder.py
++	  - In start_new_job() release building_jobs_lock already
++	    before the max_jobs check.
++
+ 2008-11-05  Michael Schwendt <mschwendt@fedoraproject.org>
+ 
+-	* Releae of 0.4.5.7
++	* Release of 0.4.5.7
+ 	
+ 	* server/BuildMaster.py
+ 	  - Fix class definition of PeriodicJob for Python 2.4.
+diff -Nur plague-0.4.5.7-orig/common/FileDownloader.py plague-0.4.5.7/common/FileDownloader.py
+--- plague-0.4.5.7-orig/common/FileDownloader.py	2008-01-31 15:13:05.000000000 +0100
++++ plague-0.4.5.7/common/FileDownloader.py	2008-12-16 21:43:15.000000000 +0100
+@@ -149,8 +149,8 @@
+         return len(self.lst)
+ 
+ 
+-def dl_callback(status, dlwr):
+-    print "Finished with %d (%s)" % (dlwr.num, status)
++def dl_callback(status, dlwr, msg):
++    print "Finished with %d (%s): %s" % (dlwr.num, status, msg)
+     dlwr.tracker.remove(dlwr)
+ 
+ 
+diff -Nur plague-0.4.5.7-orig/common/SSLCommon.py plague-0.4.5.7/common/SSLCommon.py
+--- plague-0.4.5.7-orig/common/SSLCommon.py	2006-03-12 06:52:59.000000000 +0100
++++ plague-0.4.5.7/common/SSLCommon.py	2008-12-16 23:33:03.000000000 +0100
+@@ -20,6 +20,7 @@
+ import SSLConnection
+ import httplib
+ import socket
++import select, errno
+ import SocketServer
+ 
+ def our_verify(connection, x509, errNum, errDepth, preverifyOK):
+@@ -65,7 +66,13 @@
+ 
+     def serve_forever(self):
+         while not self._quit:
+-            self.handle_request()
++            try:
++                self.handle_request()
++            except select.error, (err, strerr):
++                if err == errno.EINTR:
++                   continue
++                else:
++                    raise
+         self.server_close()
+ 
+ 
+diff -Nur plague-0.4.5.7-orig/common/SSLConnection.py plague-0.4.5.7/common/SSLConnection.py
+--- plague-0.4.5.7-orig/common/SSLConnection.py	2006-02-15 18:17:39.000000000 +0100
++++ plague-0.4.5.7/common/SSLConnection.py	2008-11-17 22:10:56.000000000 +0100
+@@ -15,7 +15,7 @@
+ class SSLConnection:
+     """
+     This whole class exists just to filter out a parameter
+-    passed in to the shutdown() method in SimpleXMLRPC.doPOST()
++    passed in to the shutdown() method in SimpleXMLRPCServer.do_POST()
+     """
+ 
+     DEFAULT_TIMEOUT = 20
+@@ -26,7 +26,7 @@
+         so I'm making a proxy instead of subclassing.
+         """
+         self.__dict__["conn"] = conn
+-        self.__dict__["close_refcount"] = 0
++        self.__dict__["close_refcount"] = 1
+         self.__dict__["closed"] = False
+         self.__dict__["timeout"] = self.DEFAULT_TIMEOUT
+ 
+@@ -48,7 +48,7 @@
+ 
+     def shutdown(self, how=1):
+         """
+-        SimpleXMLRpcServer.doPOST calls shutdown(1),
++        SimpleXMLRPCServer.do_POST() calls shutdown(1),
+         and Connection.shutdown() doesn't take
+         an argument. So we just discard the argument.
+         """
+diff -Nur plague-0.4.5.7-orig/server/Repo.py plague-0.4.5.7/server/Repo.py
+--- plague-0.4.5.7-orig/server/Repo.py	2008-09-29 17:58:26.000000000 +0200
++++ plague-0.4.5.7/server/Repo.py	2008-12-10 00:22:19.000000000 +0100
+@@ -14,12 +14,19 @@
+ #
+ # Copyright 2005 Dan Williams <dcbw@redhat.com> and Red Hat, Inc.
+ 
++import sys
++if sys.version_info[0:2] < (2,6):
++    import popen2
++    use_subprocess = False
++else:  # available since Python 2.4
++    import subprocess
++    use_subprocess = True
++
+ import os
+ import threading
+ import shutil
+ import time
+ import commands
+-import popen2
+ import fcntl
+ import stat
+ import EmailUtils
+@@ -150,9 +157,16 @@
+     def _run_repo_script(self):
+         target_str = self._target_cfg.target_string()
+         cmd = "%s %s" % (self._repo_script, target_str)
+-        print "Repo '%s': executing repository script %s" % (target_str, self._repo_script)
+-        self._pobj = popen2.Popen4(cmd=cmd)
+-        fcntl.fcntl(self._pobj.fromchild.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
++        print "Repo '%s': executing repository script: %s" % (target_str, cmd)
++        if use_subprocess:
++            try:
++                self._pobj = subprocess.Popen(args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
++                fcntl.fcntl(self._pobj.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
++            except OSError, e:
++                print "Repo Error (%s): repo_script failed: %s" % (target_str, e)
++        else:
++            self._pobj = popen2.Popen4(cmd=cmd)
++            fcntl.fcntl(self._pobj.fromchild.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
+         self._repo_script_start = time.time()
+ 
+     def _email_repo_script_failure(self, subject):
+@@ -167,7 +181,10 @@
+         output = ""
+         while True:
+             try:
+-                string = os.read(self._pobj.fromchild.fileno(), 1024)
++                if use_subprocess:
++                    string = os.read(self._pobj.stdout.fileno(), 1024)
++                else:
++                    string = os.read(self._pobj.fromchild.fileno(), 1024)
+                 if not len(string):
+                     break
+             except OSError, e:
