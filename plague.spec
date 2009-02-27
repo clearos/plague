@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.7
-Release: 3.20081216cvs%{?dist}
+Release: 4.20081216cvs%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -167,6 +167,9 @@ fi
 
 
 %changelog
+* Thu Feb 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.7-4.20081216cvs
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
+
 * Tue Dec 16 2008 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.7-3.20081216cvs
 - patch with fixes from cvs, also to make work with Python 2.6
 
