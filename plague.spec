@@ -3,12 +3,13 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.7
-Release: 4.20081216cvs%{?dist}
+Release: 5.20090612cvs%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 Source: %{name}-%{version}.tar.bz2
 Patch0: plague-0.4.5.7-cvs20081216.patch
+Patch1: plague-0.4.5.7-cvs20090612.patch
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
@@ -81,6 +82,7 @@ the interface to the build server.
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 
 %build
@@ -167,6 +169,9 @@ fi
 
 
 %changelog
+* Fri Jul 17 2009 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.7-5.20090612cvs
+- patch with fix from cvs (SSLConnection.py shutdown)
+
 * Thu Feb 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.7-4.20081216cvs
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
 
