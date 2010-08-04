@@ -1,0 +1,33 @@
+diff -Nur plague-0.4.5.7-orig/common/SSLConnection.py plague-0.4.5.7/common/SSLConnection.py
+--- plague-0.4.5.7-orig/common/SSLConnection.py	2006-02-15 18:17:39.000000000 +0100
++++ plague-0.4.5.7/common/SSLConnection.py	2010-08-04 23:35:24.000000000 +0200
+@@ -63,7 +63,7 @@
+         c, a = self.__dict__["conn"].accept()
+         return (SSLConnection(c), a)
+ 
+-    def makefile(self, mode, bufsize):
++    def makefile(self, mode='r', bufsize=-1):
+         """
+         We need to use socket._fileobject Because SSL.Connection
+         doesn't have a 'dup'. Not exactly sure WHY this is, but
+@@ -98,6 +98,8 @@
+         if not con in write:
+             raise socket.timeout((110, "Operation timed out."))
+ 
++        if type(data) == memoryview:
++            data = data.tobytes()
+         starttime = time.time()
+         origlen = len(data)
+         sent = -1
+diff -Nur plague-0.4.5.7-orig/common/XMLRPCServerProxy.py plague-0.4.5.7/common/XMLRPCServerProxy.py
+--- plague-0.4.5.7-orig/common/XMLRPCServerProxy.py	2008-01-31 14:37:12.000000000 +0100
++++ plague-0.4.5.7/common/XMLRPCServerProxy.py	2010-08-04 23:35:09.000000000 +0200
+@@ -39,7 +39,7 @@
+             # Yay for Python 2.2
+             pass
+         _host, _port = urllib.splitport(host)
+-        return SSLCommon.PlgHTTPS(_host, int(_port), ssl_context=self.ssl_ctx, timeout=self._timeout)
++        return SSLCommon.PlgHTTPSConnection(_host, int(_port), ssl_context=self.ssl_ctx, timeout=self._timeout)
+ 
+ 
+ class PlgXMLRPCServerProxy(xmlrpclib.ServerProxy):
