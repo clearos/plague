@@ -2,16 +2,12 @@ BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
-Version: 0.4.5.7
-Release: 9.20100505cvs%{?dist}
+Version: 0.4.5.8
+Release: 1%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
-Source: %{name}-%{version}.tar.bz2
-Patch0: plague-0.4.5.7-cvs20081216.patch
-Patch1: plague-0.4.5.7-cvs20090612.patch
-Patch2: plague-0.4.5.7-cvs20100505.patch
-Patch3: plague-0.4.5.7-python27.patch
+Source: http://mschwendt.fedorapeople.org/plague/%{name}-%{version}.tar.bz2
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
@@ -83,12 +79,6 @@ the interface to the build server.
 
 %prep
 %setup -q
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%if 0%{?fedora} >= 14
-%patch3 -p1
-%endif
 
 
 %build
@@ -175,6 +165,9 @@ fi
 
 
 %changelog
+* Tue Aug 10 2010 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-1
+- update to 0.4.5.8 to get rid of patches
+
 * Wed Aug  4 2010 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.7-9.20100505cvs
 - Fix Python 2.7 xmlrpclib/httplib fall-out in SSLConnection.py and 
   XMLRPCServerProxy.py (#621340).
