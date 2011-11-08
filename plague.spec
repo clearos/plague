@@ -3,14 +3,22 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 Source: http://mschwendt.fedorapeople.org/plague/%{name}-%{version}.tar.bz2
+Source1: plague-builder.service
+Source2: plague-server.service
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+# some fixes for systemd compatibility - it doesn't like double-fork daemons,
+# where the parent process exits before the main PID is known
+Patch0: plague-0.4.5.8-systemd-compat.patch
+
 BuildRequires: python
+BuildRequires: systemd-units
 Requires: createrepo >= 0.4.7
 # get the version of the sqlite api thats available to us
 %if 0%{?rhel}
@@ -20,10 +28,13 @@ Requires: python-sqlite2
 %endif
 
 Requires: %{name}-common = %{version}-%{release}
-Requires(post): /sbin/chkconfig
-Requires(post): /sbin/service
-Requires(preun): /sbin/chkconfig
-Requires(preun): /sbin/service
+Requires(post): systemd-units
+Requires(preun): systemd-units
+Requires(postun): systemd-units
+# This is actually needed for the %triggerun script but Requires(triggerun)
+# is not valid.  We can use %post because this particular %triggerun script
+# should fire just after this package is installed.
+Requires(post): systemd-sysv
 
 
 %description
@@ -79,6 +90,7 @@ the interface to the build server.
 
 %prep
 %setup -q
+%patch0 -p1 -b .systemd-compat
 
 
 %build
@@ -88,6 +100,9 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT INSTALL="install -p" install
+mkdir -p $RPM_BUILD_ROOT%{_unitdir}
+install -p -m 0644 %{SOURCE1} $RPM_BUILD_ROOT%{_unitdir}
+install -p -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_unitdir}
 chmod +x $RPM_BUILD_ROOT%{_bindir}/*
 install -p -D -m 0644 etc/plague-builder.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-builder
 install -p -D -m 0755 etc/plague-builder.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-builder
@@ -105,10 +120,32 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/service plague-server condrestart >> /dev/null || :
 
 %preun
-if [ $1 = 0 ]; then
-  /sbin/service plague-server stop &> /dev/null
-  /sbin/chkconfig --del plague-server
+if [ $1 -eq 0 ] ; then
+    # Package removal, not upgrade
+    /bin/systemctl --no-reload disable plague-server.service > /dev/null 2>&1 || :
+    /bin/systemctl stop plague-server.service > /dev/null 2>&1 || :
 fi
+
+%postun
+/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ $1 -ge 1 ] ; then
+    # Package upgrade, not uninstall
+    /bin/systemctl try-restart plague-server.service >/dev/null 2>&1 || :
+fi
+
+%triggerun -- plague < 0.4.5.8-3
+# Save the current service runlevel info
+# User must manually run systemd-sysv-convert --apply plague-server
+# to migrate them to systemd targets
+/usr/bin/systemd-sysv-convert --save plague-server >/dev/null 2>&1 ||:
+
+# If the package is allowed to autostart:
+/bin/systemctl --no-reload enable plague-server.service >/dev/null 2>&1 ||:
+
+# Run these because the SysV package being removed won't do them
+/sbin/chkconfig --del plague-server >/dev/null 2>&1 || :
+/bin/systemctl try-restart plague-server.service >/dev/null 2>&1 || :
+
 
 %pre builder
 /usr/sbin/useradd -G mock -s /sbin/nologin -M -r -d /var/lib/plague/builder plague-builder 2>/dev/null || :
@@ -118,10 +155,32 @@ fi
 /sbin/service plague-builder condrestart >> /dev/null || :
 
 %preun builder
-if [ $1 = 0 ]; then
-  /sbin/service plague-builder stop &> /dev/null
-  /sbin/chkconfig --del plague-builder
+if [ $1 -eq 0 ] ; then
+    # Package removal, not upgrade
+    /bin/systemctl --no-reload disable plague-builder.service > /dev/null 2>&1 || :
+    /bin/systemctl stop plague-builder.service > /dev/null 2>&1 || :
 fi
+
+%postun builder
+/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ $1 -ge 1 ] ; then
+    # Package upgrade, not uninstall
+    /bin/systemctl try-restart plague-builder.service >/dev/null 2>&1 || :
+fi
+
+%triggerun builder -- plague-builder < 0.4.5.8-3
+# Save the current service runlevel info
+# User must manually run systemd-sysv-convert --apply plague-builder
+# to migrate them to systemd targets
+/usr/bin/systemd-sysv-convert --save plague-builder >/dev/null 2>&1 ||:
+
+# If the package is allowed to autostart:
+/bin/systemctl --no-reload enable plague-builder.service >/dev/null 2>&1 ||:
+
+# Run these because the SysV package being removed won't do them
+/sbin/chkconfig --del plague-builder >/dev/null 2>&1 || :
+/bin/systemctl try-restart plague-builder.service >/dev/null 2>&1 || :
+
 
 %files
 %defattr(-, root, root)
@@ -132,6 +191,7 @@ fi
 %dir %{_sysconfdir}/%{name}/server/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-server
 %{_initrddir}/%{name}-server
+%{_unitdir}/%{name}-server.service
 %doc www
 
 %files common
@@ -151,6 +211,7 @@ fi
 %dir %{_sysconfdir}/%{name}/builder/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-builder
 %{_initrddir}/%{name}-builder
+%{_unitdir}/%{name}-builder.service
 %dir /var/lib/plague
 %attr(0755, plague-builder, plague-builder) /var/lib/plague/builder
 
@@ -165,6 +226,11 @@ fi
 
 
 %changelog
+* Tue Nov  8 2011 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-3
+- Some fixes for systemd compatibility, e.g. patch daemonize.py double-fork
+  to let parent die only after second child has written PID file.
+- Add systemd unit files and related package scriptlets.
+
 * Wed Feb 09 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 

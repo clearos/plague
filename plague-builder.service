@@ -1,0 +1,11 @@
+[Unit]
+Description=Plague builder daemon for build-system slave machines
+After=syslog.target network.target
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/sysconfig/plague-builder
+ExecStart=/usr/bin/plague-builder -d -c ${CONFIG} -p ${PIDFILE} $OPTIONS
+
+[Install]
+WantedBy=multiuser.target

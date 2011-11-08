@@ -1,0 +1,126 @@
+diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.py
+--- plague-0.4.5.8-orig/builder/builder.py	2010-05-05 12:45:20.000000000 +0200
++++ plague-0.4.5.8/builder/builder.py	2011-11-09 00:45:33.011902281 +0100
+@@ -838,18 +838,15 @@
+         log("No useable mock buildroots configured.  Exiting...\n")
+         sys.exit(1)
+ 
++    if opts.pidfile and os.path.exists(opts.pidfile):
++        os.unlink(opts.pidfile)
++
+     if opts.daemon:
+-        ret=daemonize.createDaemon()
++        ret=daemonize.createDaemon(opts.pidfile)
+         if ret:
+             log("Daemonizing failed!\n")
+             sys.exit(2)
+ 
+-    if opts.pidfile:
+-        f = open(opts.pidfile, 'w', 1)
+-        f.write('%d\n' % os.getpid())
+-        f.flush()
+-        f.close()
+-
+     if opts.logfile:
+         logf=open(opts.logfile, 'a')
+         sys.stdout=logf
+@@ -921,7 +918,7 @@
+             break
+     log(" done.\n");
+     sys.stdout.flush()
+-    time.sleep(2)
++
+     os._exit(0)
+ 
+ 
+diff -Nur plague-0.4.5.8-orig/common/daemonize.py plague-0.4.5.8/common/daemonize.py
+--- plague-0.4.5.8-orig/common/daemonize.py	2008-01-31 14:48:41.000000000 +0100
++++ plague-0.4.5.8/common/daemonize.py	2011-11-09 00:46:31.708713648 +0100
+@@ -22,12 +22,22 @@
+ import os               # Miscellaneous OS interfaces.
+ import sys              # System-specific parameters and functions.
+ import signal           # Set handlers for asynchronous events.
++import time
+ 
+-def createDaemon():
++parentcanexit = False
++
++def grandparenthandler(signum, frame):
++   if signum == signal.SIGUSR1:
++      global parentcanexit
++      parentcanexit = True
++   
++def createDaemon(pidfile):
+    """Detach a process from the controlling terminal and run it in the
+    background as a daemon.
+    """
+ 
++   signal.signal(signal.SIGUSR1, grandparenthandler)
++
+    try:
+       # Fork a child process so the parent can exit.  This will return control
+       # to the command line or shell.  This is required so that the new process
+@@ -41,6 +51,8 @@
+ 
+    if (pid == 0):       # The first child.
+ 
++      ppid = os.getppid()
++
+       # Next we call os.setsid() to become the session leader of this new
+       # session.  The process also becomes the process group leader of the
+       # new process group.  Since a controlling terminal is associated with a
+@@ -70,9 +82,20 @@
+          os.chdir("/")
+          # Give the child complete control over permissions.
+          os.umask(0002)
++
++         if pidfile:
++            f = open(pidfile, 'w', 1)
++            f.write('%d\n' % os.getpid())
++            f.flush()
++            f.close()
++
++         os.kill(ppid,signal.SIGUSR1)
+       else:
+          os._exit(0)      # Exit parent (the first child) of the second child.
+    else:
++      global parentcanexit
++      while not parentcanexit:
++         time.sleep(0.01)
+       os._exit(0)         # Exit parent of the first child.
+ 
+    # Close all open files.  Try the system configuration variable, SC_OPEN_MAX,
+diff -Nur plague-0.4.5.8-orig/server/main.py plague-0.4.5.8/server/main.py
+--- plague-0.4.5.8-orig/server/main.py	2008-01-31 14:28:05.000000000 +0100
++++ plague-0.4.5.8/server/main.py	2011-11-09 00:46:24.729092809 +0100
+@@ -87,15 +87,15 @@
+         print "Must specify a config file."
+         sys.exit(1)
+ 
++    if opts.pidfile and os.path.exists(opts.pidfile):
++        os.unlink(opts.pidfile)
++
+     if opts.daemon:
+-        ret=daemonize.createDaemon()
++        ret=daemonize.createDaemon(opts.pidfile)
+         if ret:
+             print "Daemonizing failed!"
+             sys.exit(2)
+ 
+-    if opts.pidfile:
+-        open(opts.pidfile, 'w').write('%d\n' % os.getpid())
+-
+     if opts.logfile:
+         # 1 == line buffer the log file
+         log=open(opts.logfile, 'a', 1)
+@@ -186,10 +186,6 @@
+     if use_tbs:
+         tbs.stop()
+ 
+-    if opts.pidfile:
+-        os.unlink(opts.pidfile)
+-
+-    time.sleep(2)
+     print "Done."
+     os._exit(0)
+ 
