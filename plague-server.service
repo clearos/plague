@@ -1,6 +1,6 @@
 [Unit]
 Description=Plague server daemon for build-system master machines
-After=syslog.target network.target
+After=rpcbind.service
 
 [Service]
 Type=forking
@@ -8,4 +8,4 @@ EnvironmentFile=/etc/sysconfig/plague-server
 ExecStart=/usr/bin/plague-server -d -c ${CONFIG} -p ${PIDFILE} $OPTIONS
 
 [Install]
-WantedBy=multiuser.target
+WantedBy=multi-user.target

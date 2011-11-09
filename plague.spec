@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -58,11 +58,14 @@ Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
 Requires: yum >= 2.2.1
 Requires: mock >= 0.8
-Requires(post): /sbin/chkconfig
-Requires(post): /sbin/service
-Requires(preun): /sbin/chkconfig
-Requires(preun): /sbin/service
 Requires(pre): /usr/sbin/useradd
+Requires(post): systemd-units
+Requires(preun): systemd-units
+Requires(postun): systemd-units
+# This is actually needed for the %triggerun script but Requires(triggerun)
+# is not valid.  We can use %post because this particular %triggerun script
+# should fire just after this package is installed.
+Requires(post): systemd-sysv
 
 %description builder
 The Plague builder does the actual RPM package building on slave machines.
@@ -115,10 +118,6 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 rm -rf $RPM_BUILD_ROOT
 
 
-%post
-/sbin/chkconfig --add plague-server
-/sbin/service plague-server condrestart >> /dev/null || :
-
 %preun
 if [ $1 -eq 0 ] ; then
     # Package removal, not upgrade
@@ -149,10 +148,6 @@ fi
 
 %pre builder
 /usr/sbin/useradd -G mock -s /sbin/nologin -M -r -d /var/lib/plague/builder plague-builder 2>/dev/null || :
-
-%post builder
-/sbin/chkconfig --add plague-builder
-/sbin/service plague-builder condrestart >> /dev/null || :
 
 %preun builder
 if [ $1 -eq 0 ] ; then
@@ -226,6 +221,12 @@ fi
 
 
 %changelog
+* Wed Nov  9 2011 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-4
+- drop old chkconfig/service usage and deps
+- add systemd package deps also to -builder package
+- s/multiuser/multi-user/ in systemd unit files
+- start After=rpcbind.service 
+
 * Tue Nov  8 2011 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-3
 - Some fixes for systemd compatibility, e.g. patch daemonize.py double-fork
   to let parent die only after second child has written PID file.
