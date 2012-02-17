@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 5%{?dist}
+Release: 6%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -21,11 +21,10 @@ BuildRequires: python
 BuildRequires: systemd-units
 Requires: createrepo >= 0.4.7
 # get the version of the sqlite api thats available to us
-%if 0%{?rhel}
+%if 0%{?rhel} && 0%{?rhel} <= 5
 Requires: python-sqlite
-%else
-Requires: python-sqlite2
 %endif
+# All other distros have sqlite3 built into the python stdlib
 
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): systemd-units
@@ -221,6 +220,9 @@ fi
 
 
 %changelog
+* Fri Feb 17 2012 Toshio Kuratomi <toshio@fedoraproject.org> - 0.4.5.8-6
+- Patch to allow plague to run with the sqlite3 module from the python-2.5+ stdlib
+
 * Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-5
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
 
