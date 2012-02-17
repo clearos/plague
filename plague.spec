@@ -3,7 +3,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 6%{?dist}
+Release: 7%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -16,6 +16,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # some fixes for systemd compatibility - it doesn't like double-fork daemons,
 # where the parent process exits before the main PID is known
 Patch0: plague-0.4.5.8-systemd-compat.patch
+# Patch that allows using the sqlite3 module from python-2.5+ stdlib
+Patch1: plague-python25-sqlite.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -93,7 +95,7 @@ the interface to the build server.
 %prep
 %setup -q
 %patch0 -p1 -b .systemd-compat
-
+%patch1 -p1 -b .sqlite3
 
 %build
 make
@@ -220,6 +222,9 @@ fi
 
 
 %changelog
+* Fri Feb 17 2012 Toshio Kuratomi <toshio@fedoraproject.org> - 0.4.5.8-7
+- Apply the patch for real
+
 * Fri Feb 17 2012 Toshio Kuratomi <toshio@fedoraproject.org> - 0.4.5.8-6
 - Patch to allow plague to run with the sqlite3 module from the python-2.5+ stdlib
 
