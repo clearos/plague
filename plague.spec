@@ -1,9 +1,11 @@
+# Fedora 18 or newer only
+
 BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 8%{?dist}
+Release: 9%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -11,7 +13,6 @@ Source: http://mschwendt.fedorapeople.org/plague/%{name}-%{version}.tar.bz2
 Source1: plague-builder.service
 Source2: plague-server.service
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 # some fixes for systemd compatibility - it doesn't like double-fork daemons,
 # where the parent process exits before the main PID is known
@@ -32,10 +33,6 @@ Requires: %{name}-common = %{version}-%{release}
 Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
-# This is actually needed for the %triggerun script but Requires(triggerun)
-# is not valid.  We can use %post because this particular %triggerun script
-# should fire just after this package is installed.
-Requires(post): systemd-sysv
 
 
 %description
@@ -63,10 +60,6 @@ Requires(pre): /usr/sbin/useradd
 Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
-# This is actually needed for the %triggerun script but Requires(triggerun)
-# is not valid.  We can use %post because this particular %triggerun script
-# should fire just after this package is installed.
-Requires(post): systemd-sysv
 
 %description builder
 The Plague builder does the actual RPM package building on slave machines.
@@ -102,7 +95,6 @@ make
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT INSTALL="install -p" install
 mkdir -p $RPM_BUILD_ROOT%{_unitdir}
 install -p -m 0644 %{SOURCE1} $RPM_BUILD_ROOT%{_unitdir}
@@ -115,67 +107,27 @@ install -p -D -m 0755 etc/plague-server.init $RPM_BUILD_ROOT%{_initrddir}/%{name
 mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
+%post
+%systemd_post plague-server.service
 
 %preun
-if [ $1 -eq 0 ] ; then
-    # Package removal, not upgrade
-    /bin/systemctl --no-reload disable plague-server.service > /dev/null 2>&1 || :
-    /bin/systemctl stop plague-server.service > /dev/null 2>&1 || :
-fi
+%systemd_preun plague-server.service
 
 %postun
-/bin/systemctl daemon-reload >/dev/null 2>&1 || :
-if [ $1 -ge 1 ] ; then
-    # Package upgrade, not uninstall
-    /bin/systemctl try-restart plague-server.service >/dev/null 2>&1 || :
-fi
+%systemd_postun_with_restart plague-server.service 
 
-%triggerun -- plague < 0.4.5.8-3
-# Save the current service runlevel info
-# User must manually run systemd-sysv-convert --apply plague-server
-# to migrate them to systemd targets
-/usr/bin/systemd-sysv-convert --save plague-server >/dev/null 2>&1 ||:
 
-# If the package is allowed to autostart:
-/bin/systemctl --no-reload enable plague-server.service >/dev/null 2>&1 ||:
-
-# Run these because the SysV package being removed won't do them
-/sbin/chkconfig --del plague-server >/dev/null 2>&1 || :
-/bin/systemctl try-restart plague-server.service >/dev/null 2>&1 || :
-
+%post builder
+%systemd_post plague-builder.service
 
 %pre builder
 /usr/sbin/useradd -G mock -s /sbin/nologin -M -r -d /var/lib/plague/builder plague-builder 2>/dev/null || :
 
 %preun builder
-if [ $1 -eq 0 ] ; then
-    # Package removal, not upgrade
-    /bin/systemctl --no-reload disable plague-builder.service > /dev/null 2>&1 || :
-    /bin/systemctl stop plague-builder.service > /dev/null 2>&1 || :
-fi
+%systemd_preun plague-builder.service
 
 %postun builder
-/bin/systemctl daemon-reload >/dev/null 2>&1 || :
-if [ $1 -ge 1 ] ; then
-    # Package upgrade, not uninstall
-    /bin/systemctl try-restart plague-builder.service >/dev/null 2>&1 || :
-fi
-
-%triggerun builder -- plague-builder < 0.4.5.8-3
-# Save the current service runlevel info
-# User must manually run systemd-sysv-convert --apply plague-builder
-# to migrate them to systemd targets
-/usr/bin/systemd-sysv-convert --save plague-builder >/dev/null 2>&1 ||:
-
-# If the package is allowed to autostart:
-/bin/systemctl --no-reload enable plague-builder.service >/dev/null 2>&1 ||:
-
-# Run these because the SysV package being removed won't do them
-/sbin/chkconfig --del plague-builder >/dev/null 2>&1 || :
-/bin/systemctl try-restart plague-builder.service >/dev/null 2>&1 || :
+%systemd_postun_with_restart plague-builder.service 
 
 
 %files
@@ -222,6 +174,10 @@ fi
 
 
 %changelog
+* Thu Aug 30 2012 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-9
+- Introduce new systemd-rpm macros in plague spec file (#850272), but
+  don't add conditionals for "Fedora 17 and older".
+
 * Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-8
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
