@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 10%{?dist}
+Release: 11%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -19,6 +19,8 @@ URL: http://www.fedoraproject.org/wiki/Projects/Plague
 Patch0: plague-0.4.5.8-systemd-compat.patch
 # Patch that allows using the sqlite3 module from python-2.5+ stdlib
 Patch1: plague-python25-sqlite.patch
+# Let builder return only .rpm/.log files
+Patch2: plague-0.4.5.8-filter-results.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -89,6 +91,7 @@ the interface to the build server.
 %setup -q
 %patch0 -p1 -b .systemd-compat
 %patch1 -p1 -b .sqlite3
+%patch2 -p1 -b .filter-results
 
 %build
 make
@@ -174,6 +177,11 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Mon Mar  4 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-11
+- Since new Mock creates additional result files "available_pkgs" and
+  "installed_pkgs", but the Plague Server only wants .rpm/.log files,
+  ignore anything else.
+
 * Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-10
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
 
@@ -414,7 +422,7 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
     o Make repo scripts actually work
     o Don't traceback when cleaning up job files if we have none
 
-* Mon Aug 19 2005 Dan Williams <dcbw@redhat.com> 0.3.3-1
+* Fri Aug 19 2005 Dan Williams <dcbw@redhat.com> 0.3.3-1
 - Version 0.3.3
     o Add repo script support
     o Fix double-slashes in log URL (Ignacio Vazquez-Abrams)
