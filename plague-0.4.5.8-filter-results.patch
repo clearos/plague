@@ -1,17 +1,26 @@
 diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.py
 --- plague-0.4.5.8-orig/builder/builder.py	2010-05-05 12:45:20.000000000 +0200
-+++ plague-0.4.5.8/builder/builder.py	2013-03-04 23:08:25.010148289 +0100
-@@ -462,8 +462,12 @@
++++ plague-0.4.5.8/builder/builder.py	2013-03-07 14:20:44.657086365 +0100
+@@ -16,6 +16,7 @@
+ # Copyright 2005 Dan Williams <dcbw@redhat.com> and Red Hat, Inc.
+ 
+ 
++import copy
+ import socket
+ import os
+ import shutil
+@@ -462,8 +463,13 @@
      def _find_files(self):
          # Grab the list of files in our job's result dir and URL encode them
          files_in_dir = os.listdir(self._result_dir)
 -        if 'repodata' in files_in_dir:
 -            files_in_dir.remove('repodata')
-+        for f in files_in_dir:
++        for f in copy.copy(files_in_dir):
 +            for ext in ['.rpm','.log']:
 +                if f.endswith(ext):
 +                    break
 +            else:
++                self._log("Ignoring File: %s\n"%f)
 +                files_in_dir.remove(f)
          file_list = []
          self._log("\n")

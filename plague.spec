@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 11%{?dist}
+Release: 12%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -177,6 +177,9 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Thu Mar  7 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-12
+- Fix the patch in -11.
+
 * Mon Mar  4 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-11
 - Since new Mock creates additional result files "available_pkgs" and
   "installed_pkgs", but the Plague Server only wants .rpm/.log files,
