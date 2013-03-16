@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 12%{?dist}
+Release: 13%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -21,6 +21,8 @@ Patch0: plague-0.4.5.8-systemd-compat.patch
 Patch1: plague-python25-sqlite.patch
 # Let builder return only .rpm/.log files
 Patch2: plague-0.4.5.8-filter-results.patch
+# Let server not crash in prep stage with RpmUtilsError exception.
+Patch3: plague-0.4.5.8-prep-srpm-error.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -92,6 +94,8 @@ the interface to the build server.
 %patch0 -p1 -b .systemd-compat
 %patch1 -p1 -b .sqlite3
 %patch2 -p1 -b .filter-results
+%patch3 -p1 -b .prep-srpm-exception
+
 
 %build
 make
@@ -177,6 +181,9 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Sat Mar 16 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-13
+- Let server not crash in prep stage with RpmUtilsError exception.
+
 * Thu Mar  7 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-12
 - Fix the patch in -11.
 
