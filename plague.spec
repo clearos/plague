@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 13%{?dist}
+Release: 14%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -23,6 +23,11 @@ Patch1: plague-python25-sqlite.patch
 Patch2: plague-0.4.5.8-filter-results.patch
 # Let server not crash in prep stage with RpmUtilsError exception.
 Patch3: plague-0.4.5.8-prep-srpm-error.patch
+# Typo in email error message.
+Patch4: plague-0.4.5.8-emailutils.patch
+# Send a fake request to break out of the bm_server serve_forever loop.
+# This may avoid polling select() but causes an SSL error message in the log.
+Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -95,6 +100,8 @@ the interface to the build server.
 %patch1 -p1 -b .sqlite3
 %patch2 -p1 -b .filter-results
 %patch3 -p1 -b .prep-srpm-exception
+%patch4 -p1 -b .emailutils-typo
+%patch5 -p1 -b .server-wakeup-serve_forever
 
 
 %build
@@ -181,6 +188,12 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Mon Apr 22 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-14
+- Patch server to send a fake request in SIGTERM exit handler to end the
+  serve_forever loop.
+- Also add Requires=rpcbind.service in systemd files.
+- Fix typo in EmailUtils.py error message.
+
 * Sat Mar 16 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-13
 - Let server not crash in prep stage with RpmUtilsError exception.
 

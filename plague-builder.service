@@ -1,5 +1,6 @@
 [Unit]
 Description=Plague builder daemon for build-system slave machines
+Requires=rpcbind.service
 After=rpcbind.service
 
 [Service]
