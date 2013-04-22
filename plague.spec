@@ -25,7 +25,7 @@ Patch2: plague-0.4.5.8-filter-results.patch
 Patch3: plague-0.4.5.8-prep-srpm-error.patch
 # Typo in email error message.
 Patch4: plague-0.4.5.8-emailutils.patch
-# Send a fake request to break out of the bm_server serve_forever loop.
+# Send a fake request to break out of the serve_forever loops.
 # This may avoid polling select() but causes an SSL error message in the log.
 Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
 
@@ -189,8 +189,8 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 %changelog
 * Mon Apr 22 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-14
-- Patch server to send a fake request in SIGTERM exit handler to end the
-  serve_forever loop.
+- Patch server and builder to send a fake request in SIGTERM exit handler
+  to end the serve_forever loop.
 - Also add Requires=rpcbind.service in systemd files.
 - Fix typo in EmailUtils.py error message.
 
