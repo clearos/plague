@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 15%{?dist}
+Release: 16%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -28,6 +28,9 @@ Patch4: plague-0.4.5.8-emailutils.patch
 # Send a fake request to break out of the serve_forever loops.
 # This may avoid polling select() but causes an SSL error message in the log.
 Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
+# check number of args for build command, to avoid triggered ABRT with
+# an IndexError Python exception
+Patch6: plague-0.4.5.8-client-build-args.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -102,6 +105,7 @@ the interface to the build server.
 %patch3 -p1 -b .prep-srpm-exception
 %patch4 -p1 -b .emailutils-typo
 %patch5 -p1 -b .server-wakeup-serve_forever
+%patch6 -p1 -b .client-build-args
 
 
 %build
@@ -188,6 +192,9 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Thu Aug  8 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-16
+- Avoid IndexError exception in client build command.
+
 * Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-15
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 

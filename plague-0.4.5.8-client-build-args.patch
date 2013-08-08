@@ -1,0 +1,30 @@
+diff -Nurb --strip-trailing-cr plague-0.4.5.8-orig/client/client.py plague-0.4.5.8/client/client.py
+--- plague-0.4.5.8-orig/client/client.py	2008-08-23 12:29:55.000000000 +0200
++++ plague-0.4.5.8/client/client.py	2013-08-08 11:18:47.324667893 +0200
+@@ -144,11 +144,8 @@
+         return cfg_email
+ 
+     def _cmd_build(self, args):
+-        if len(args) != 2 and len(args) != 3:
+-            raise CommandException("Invalid command.  The 'build' command takes 3 arguments.")
+-
+         # Be smart about local SRPMs getting enqueued
+-        if args[0].find('/') != -1 and os.path.exists(args[0]):
++        if len(args) >= 2 and args[0].find('/') != -1 and os.path.exists(args[0]):
+             # We were given an RPM, find the package name
+             import rpmUtils
+             ts = rpmUtils.transaction.initReadOnlyTransaction()
+@@ -158,10 +155,12 @@
+             target_alias = args[1]
+             del hdr
+             del ts
+-        else:
++        elif len(args) == 3:
+             package = args[0]
+             source = args[1]
+             target_alias = args[2]
++        else:
++            raise CommandException("Invalid number of arguments.")
+ 
+         is_srpm = False
+         if source.endswith(".src.rpm"):
