@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 18%{?dist}
+Release: 19%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -35,11 +35,6 @@ Patch6: plague-0.4.5.8-client-build-args.patch
 BuildRequires: python
 BuildRequires: systemd-units
 Requires: createrepo >= 0.4.7
-# get the version of the sqlite api thats available to us
-%if 0%{?rhel} && 0%{?rhel} <= 5
-Requires: python-sqlite
-%endif
-# All other distros have sqlite3 built into the python stdlib
 
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): systemd-units
@@ -75,6 +70,7 @@ Requires(postun): systemd-units
 
 %description builder
 The Plague builder does the actual RPM package building on slave machines.
+
 
 %package client
 Summary: Package queueing client for the Plague build system
@@ -119,9 +115,7 @@ install -p -m 0644 %{SOURCE1} $RPM_BUILD_ROOT%{_unitdir}
 install -p -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_unitdir}
 chmod +x $RPM_BUILD_ROOT%{_bindir}/*
 install -p -D -m 0644 etc/plague-builder.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-builder
-install -p -D -m 0755 etc/plague-builder.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-builder
 install -p -D -m 0644 etc/plague-server.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-server
-install -p -D -m 0755 etc/plague-server.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-server
 mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
@@ -149,19 +143,16 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %files
-%defattr(-, root, root)
 %{_bindir}/%{name}-server
 %dir %{_datadir}/%{name}/server
 %{_datadir}/%{name}/server/*.py*
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-server
-%{_initrddir}/%{name}-server
 %{_unitdir}/%{name}-server.service
 %doc www
 
 %files common
-%defattr(-, root, root)
 %doc README ChangeLog
 %dir %{_sysconfdir}/%{name}
 %dir %{_datadir}/%{name}
@@ -169,29 +160,30 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 /usr/lib/python?.?/site-packages/%{name}/*.py*
 
 %files builder
-%defattr(-, root, root)
 %{_bindir}/%{name}-builder
 %dir %{_datadir}/%{name}/builder
 %{_datadir}/%{name}/builder/*.py*
 %dir %{_sysconfdir}/%{name}/builder
 %dir %{_sysconfdir}/%{name}/builder/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-builder
-%{_initrddir}/%{name}-builder
 %{_unitdir}/%{name}-builder.service
 %dir /var/lib/plague
 %attr(0755, plague-builder, plague-builder) /var/lib/plague/builder
 
 %files client
-%defattr(-, root, root)
 %{_bindir}/%{name}-client
 
 %files utils
-%defattr(-, root, root)
 %{_bindir}/%{name}-user-manager
 %{_bindir}/%{name}-certhelper
 
 
 %changelog
+* Mon Jun 30 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-19
+- Don't package legacy SysV style initscripts (#1113644).
+- Remove RHEL conditional BR.
+- Remove %%defattr usage.
+
 * Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-18
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
 
