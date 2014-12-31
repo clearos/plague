@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 19%{?dist}
+Release: 20%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -61,7 +61,6 @@ require.
 Summary: Builder daemon for Plague builder slaves
 Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
-Requires: yum >= 2.2.1
 Requires: mock >= 0.8
 Requires(pre): /usr/sbin/useradd
 Requires(post): systemd-units
@@ -179,6 +178,10 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Wed Dec 31 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-20
+- Plague Builder does not use Yum directly but Mock (which may
+  or may not use Yum as package tool). (#1156545 use dnf instead of yum)
+
 * Mon Jun 30 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-19
 - Don't package legacy SysV style initscripts (#1113644).
 - Remove RHEL conditional BR.
