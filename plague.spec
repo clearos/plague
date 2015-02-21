@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 20%{?dist}
+Release: 21%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -31,6 +31,8 @@ Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
 # check number of args for build command, to avoid triggered ABRT with
 # an IndexError Python exception
 Patch6: plague-0.4.5.8-client-build-args.patch
+# let certhelper default to sha1 instead of md5 to please openssl
+Patch7: plague-0.4.5.8-md5-sha1-openssl.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -101,6 +103,7 @@ the interface to the build server.
 %patch4 -p1 -b .emailutils-typo
 %patch5 -p1 -b .server-wakeup-serve_forever
 %patch6 -p1 -b .client-build-args
+%patch7 -p1 -b .md5-sha1-openssl
 
 
 %build
@@ -178,6 +181,9 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Sat Feb 21 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-21
+- Let certhelper generate files with sha1 instead of md5.
+
 * Wed Dec 31 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-20
 - Plague Builder does not use Yum directly but Mock (which may
   or may not use Yum as package tool). (#1156545 use dnf instead of yum)
