@@ -1,11 +1,12 @@
 # Fedora 18 or newer only
+# 20150228: TODO: check Fedora <= 20.
 
 BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 21%{?dist}
+Release: 22%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -33,6 +34,8 @@ Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
 Patch6: plague-0.4.5.8-client-build-args.patch
 # let certhelper default to sha1 instead of md5 to please openssl
 Patch7: plague-0.4.5.8-md5-sha1-openssl.patch
+# Mock state.log contents have changed again and confuse plague-builder
+Patch8: plague-0.4.5.8-fedora-mock-state.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -104,6 +107,7 @@ the interface to the build server.
 %patch5 -p1 -b .server-wakeup-serve_forever
 %patch6 -p1 -b .client-build-args
 %patch7 -p1 -b .md5-sha1-openssl
+%patch8 -p1 -b .fedora-mock-state
 
 
 %build
@@ -181,6 +185,11 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Sat Feb 28 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-22
+- Builder upgrade revealed that Mock in Fedora has changed and creates a
+  different state.log file than what has been compatible with Plague Builder.
+  Patch plague-builder state.log reading.
+
 * Sat Feb 21 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-21
 - Let certhelper generate files with sha1 instead of md5.
 

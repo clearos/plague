@@ -1,0 +1,56 @@
+diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.py
+--- plague-0.4.5.8-orig/builder/builder.py	2010-05-05 12:45:20.000000000 +0200
++++ plague-0.4.5.8/builder/builder.py	2015-02-28 11:40:40.226331650 +0100
+@@ -253,15 +253,6 @@
+         self._childpid = ExecUtils.exec_with_redirect(cmd, args, None, None, None)
+         self._status = 'cleanup'
+ 
+-    def _mock_is_prepping(self):
+-        mock_status = self._get_mock_status()
+-        if mock_status:
+-            prepstates = ['enabl','creating cache','unpacking cache','setup']
+-            for s in prepstates:
+-                if mock_status.startswith(s):
+-                    return True
+-        return False
+-
+     def _get_mock_status(self):
+         mockstatusfile = self._state_file
+         if not os.path.exists(mockstatusfile):
+@@ -285,15 +276,16 @@
+                     continue
+                 break
+         f.close()
+-        mockstat = None
+-        lastline = lines[len(lines)-1].lower()
+-        statedelim = "state changed:"
+-        stateidx = lastline.rfind(statedelim)
+-        if stateidx>0:
+-            mockstat = lastline[stateidx+len(statedelim):].lstrip()
+-            return mockstat
+-        else:
+-            return None
++        mockstat = 'prepping'
++        for li in range(len(lines)):
++            line = lines[li].lower()
++            statedelim = " start: "
++            stateidx = line.rfind(statedelim)
++            if stateidx>0:
++                s = line[stateidx+len(statedelim):].lstrip()
++                if s.startswith('rpmbuild'):
++                    return 'building'
++        return mockstat
+ 
+     def _read_mock_config(self):
+         mockconfigfile = os.path.join(self._result_dir, 'mockconfig.log')
+@@ -365,9 +357,7 @@
+                 self._log("ERROR: Timed out waiting for the mock status file!  %s\n" % self._state_file)
+                 self.die()
+         else:
+-            if not self._mock_config and self._mock_is_prepping():
+-                self._mock_config = self._read_mock_config()
+-            if not self._mock_is_prepping():
++            if self._get_mock_status() == 'building':
+                 self._status = 'building'
+                 return
+             self._watch_mock('done', 'failed')
