@@ -1,6 +1,6 @@
 diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.py
 --- plague-0.4.5.8-orig/builder/builder.py	2010-05-05 12:45:20.000000000 +0200
-+++ plague-0.4.5.8/builder/builder.py	2015-02-28 11:40:40.226331650 +0100
++++ plague-0.4.5.8/builder/builder.py	2015-03-02 01:46:22.511456796 +0100
 @@ -253,15 +253,6 @@
          self._childpid = ExecUtils.exec_with_redirect(cmd, args, None, None, None)
          self._status = 'cleanup'
@@ -43,7 +43,15 @@ diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.
  
      def _read_mock_config(self):
          mockconfigfile = os.path.join(self._result_dir, 'mockconfig.log')
-@@ -365,9 +357,7 @@
+@@ -359,15 +351,13 @@
+         # We need to make sure that mock has dumped the status file withing a certain
+         # amount of time, otherwise we can't tell what it's doing
+         if not os.path.exists(self._state_file):
+-            # something is wrong if mock takes more than 15s to write the status file
+-            if time.time() > self._mockstarttime + 15:
++            # something is wrong if mock takes more than 60s to write the status file
++            if time.time() > self._mockstarttime + 60:
+                 self._mockstarttime = 0
                  self._log("ERROR: Timed out waiting for the mock status file!  %s\n" % self._state_file)
                  self.die()
          else:

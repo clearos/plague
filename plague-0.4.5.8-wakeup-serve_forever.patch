@@ -1,6 +1,6 @@
 diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.py
 --- plague-0.4.5.8-orig/builder/builder.py	2010-05-05 12:45:20.000000000 +0200
-+++ plague-0.4.5.8/builder/builder.py	2013-04-22 15:35:24.683026931 +0200
++++ plague-0.4.5.8/builder/builder.py	2015-03-02 01:44:47.343591868 +0100
 @@ -799,6 +799,14 @@
      log("Received SIGTERM, quitting...\n")
      bserver.stop()
@@ -16,9 +16,21 @@ diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.
  def main():
      global bserver
  
+diff -Nur plague-0.4.5.8-orig/common/SSLConnection.py plague-0.4.5.8/common/SSLConnection.py
+--- plague-0.4.5.8-orig/common/SSLConnection.py	2010-08-10 17:19:22.000000000 +0200
++++ plague-0.4.5.8/common/SSLConnection.py	2015-03-02 01:00:55.000000000 +0100
+@@ -149,6 +149,8 @@
+             except SSL.SysCallError, (e, err):
+                 time.sleep(0.2)
+                 return None
++            except Error:
++                return None
+         return None
+ 
+ class PlgFileObject(socket._fileobject):
 diff -Nur plague-0.4.5.8-orig/server/main.py plague-0.4.5.8/server/main.py
 --- plague-0.4.5.8-orig/server/main.py	2008-01-31 14:28:05.000000000 +0100
-+++ plague-0.4.5.8/server/main.py	2013-04-22 15:36:00.412107870 +0200
++++ plague-0.4.5.8/server/main.py	2015-03-02 01:44:47.365590682 +0100
 @@ -68,6 +68,14 @@
      print "Received SIGTERM, quitting..."
      bm_server.stop()

@@ -6,7 +6,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 22%{?dist}
+Release: 23%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -185,6 +185,10 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Mon Mar  2 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-23
+- Wait max. 60 s for Mock state.log to appear (prev. 15 s).
+- Ignore SSL.Error exceptions in recv().
+
 * Sat Feb 28 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-22
 - Builder upgrade revealed that Mock in Fedora has changed and creates a
   different state.log file than what has been compatible with Plague Builder.
