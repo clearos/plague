@@ -6,7 +6,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 23%{?dist}
+Release: 24%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -185,6 +185,9 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Sat Mar 14 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-24
+- Rebuild with fixed patch file.
+
 * Mon Mar  2 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-23
 - Wait max. 60 s for Mock state.log to appear (prev. 15 s).
 - Ignore SSL.Error exceptions in recv().

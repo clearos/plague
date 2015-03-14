@@ -23,7 +23,7 @@ diff -Nur plague-0.4.5.8-orig/common/SSLConnection.py plague-0.4.5.8/common/SSLC
              except SSL.SysCallError, (e, err):
                  time.sleep(0.2)
                  return None
-+            except Error:
++            except SSL.Error:
 +                return None
          return None
  
