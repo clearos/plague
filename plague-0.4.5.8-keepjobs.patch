@@ -1,0 +1,16 @@
+diff -up plague-0.4.5.8/server/BuildMaster.py.keepjobs plague-0.4.5.8/server/BuildMaster.py
+--- plague-0.4.5.8/server/BuildMaster.py.keepjobs	2011-04-09 09:55:35.645857362 -0600
++++ plague-0.4.5.8/server/BuildMaster.py	2011-04-09 09:56:01.285336069 -0600
+@@ -421,9 +421,9 @@ class BuildMaster(threading.Thread):
+     def _cleanup_db(self):
+         expiretime = int(time.time()-14*24*3600)
+         print "DB cleanup: %d" % expiretime
+-        self._cursor.execute("DELETE FROM jobs WHERE (status='failed' OR status='finished') AND endtime<=%d" % expiretime)
+-        self._dbcx.commit()
+- 
++        #self._cursor.execute("DELETE FROM jobs WHERE (status='failed' OR status='finished') AND endtime<=%d" % expiretime)
++        #self._dbcx.commit()
++
+     def _finish_signed(self):  # only for Fedora Extras pushscript
+         print "Checking needsign"
+         self._cursor.execute("SELECT * FROM jobs WHERE status='needsign'")

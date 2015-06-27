@@ -1,7 +1,7 @@
 [Unit]
 Description=Plague server daemon for build-system master machines
 Requires=rpcbind.service
-After=rpcbind.service
+After=rpcbind.service network-online.service
 
 [Service]
 Type=forking

@@ -5,7 +5,7 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 17%{?dist}
+Release: 17.3%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -31,6 +31,13 @@ Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
 # check number of args for build command, to avoid triggered ABRT with
 # an IndexError Python exception
 Patch6: plague-0.4.5.8-client-build-args.patch
+
+# Mark packages finished with PUSHED
+Patch100: plague-0.4.5.8-pushscript-extras.patch
+# Keep failed jobs around
+Patch101: plague-0.4.5.8-keepjobs.patch
+# Add git scm code (beta)
+Patch102: plague-0.4.5.8-scm-updates.patch
 
 BuildRequires: python
 BuildRequires: systemd-units
@@ -106,6 +113,9 @@ the interface to the build server.
 %patch4 -p1 -b .emailutils-typo
 %patch5 -p1 -b .server-wakeup-serve_forever
 %patch6 -p1 -b .client-build-args
+%patch100 -p1 -b .pushscript-extras
+%patch101 -p1 -b .keepjobs
+%patch102 -p1 -b .scm-updates
 
 
 %build
@@ -192,6 +202,14 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %changelog
+* Sun Aug  4 2014 Shad L. Lords <slords@lordsfam.net> - 0.4.5.8-17.2
+- Also add After=network-online.service in systemd files.
+
+* Sat Aug  3 2014 Shad L. Lords <slords@lordsfam.net> - 0.4.5.8-17.1
+- Mark signed packages finished
+- Keep deleted jobs around
+- Add first cut at git integration
+
 * Thu Aug  8 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-17
 - Fix two-args client build (with rpm path containing '/') by importing
   rpmUtils.transaction correctly.
