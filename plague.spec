@@ -1,11 +1,12 @@
 # Fedora 18 or newer only
+# 20150228: TODO: check Fedora <= 20.
 
 BuildArch: noarch
 
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 17.3%{?dist}
+Release: 26%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
@@ -31,6 +32,10 @@ Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
 # check number of args for build command, to avoid triggered ABRT with
 # an IndexError Python exception
 Patch6: plague-0.4.5.8-client-build-args.patch
+# let certhelper default to sha1 instead of md5 to please openssl
+Patch7: plague-0.4.5.8-md5-sha1-openssl.patch
+# Mock state.log contents have changed again and confuse plague-builder
+Patch8: plague-0.4.5.8-fedora-mock-state.patch
 
 # Mark packages finished with PUSHED
 Patch100: plague-0.4.5.8-pushscript-extras.patch
@@ -42,11 +47,6 @@ Patch102: plague-0.4.5.8-scm-updates.patch
 BuildRequires: python
 BuildRequires: systemd-units
 Requires: createrepo >= 0.4.7
-# get the version of the sqlite api thats available to us
-%if 0%{?rhel} && 0%{?rhel} <= 5
-Requires: python-sqlite
-%endif
-# All other distros have sqlite3 built into the python stdlib
 
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): systemd-units
@@ -73,7 +73,6 @@ require.
 Summary: Builder daemon for Plague builder slaves
 Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
-Requires: yum >= 2.2.1
 Requires: mock >= 0.8
 Requires(pre): /usr/sbin/useradd
 Requires(post): systemd-units
@@ -82,6 +81,7 @@ Requires(postun): systemd-units
 
 %description builder
 The Plague builder does the actual RPM package building on slave machines.
+
 
 %package client
 Summary: Package queueing client for the Plague build system
@@ -113,6 +113,8 @@ the interface to the build server.
 %patch4 -p1 -b .emailutils-typo
 %patch5 -p1 -b .server-wakeup-serve_forever
 %patch6 -p1 -b .client-build-args
+%patch7 -p1 -b .md5-sha1-openssl
+%patch8 -p1 -b .fedora-mock-state
 %patch100 -p1 -b .pushscript-extras
 %patch101 -p1 -b .keepjobs
 %patch102 -p1 -b .scm-updates
@@ -129,9 +131,7 @@ install -p -m 0644 %{SOURCE1} $RPM_BUILD_ROOT%{_unitdir}
 install -p -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_unitdir}
 chmod +x $RPM_BUILD_ROOT%{_bindir}/*
 install -p -D -m 0644 etc/plague-builder.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-builder
-install -p -D -m 0755 etc/plague-builder.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-builder
 install -p -D -m 0644 etc/plague-server.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-server
-install -p -D -m 0755 etc/plague-server.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-server
 mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
@@ -159,19 +159,16 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 
 
 %files
-%defattr(-, root, root)
 %{_bindir}/%{name}-server
 %dir %{_datadir}/%{name}/server
 %{_datadir}/%{name}/server/*.py*
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-server
-%{_initrddir}/%{name}-server
 %{_unitdir}/%{name}-server.service
 %doc www
 
 %files common
-%defattr(-, root, root)
 %doc README ChangeLog
 %dir %{_sysconfdir}/%{name}
 %dir %{_datadir}/%{name}
@@ -179,36 +176,63 @@ mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
 /usr/lib/python?.?/site-packages/%{name}/*.py*
 
 %files builder
-%defattr(-, root, root)
 %{_bindir}/%{name}-builder
 %dir %{_datadir}/%{name}/builder
 %{_datadir}/%{name}/builder/*.py*
 %dir %{_sysconfdir}/%{name}/builder
 %dir %{_sysconfdir}/%{name}/builder/certs
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-builder
-%{_initrddir}/%{name}-builder
 %{_unitdir}/%{name}-builder.service
 %dir /var/lib/plague
 %attr(0755, plague-builder, plague-builder) /var/lib/plague/builder
 
 %files client
-%defattr(-, root, root)
 %{_bindir}/%{name}-client
 
 %files utils
-%defattr(-, root, root)
 %{_bindir}/%{name}-user-manager
 %{_bindir}/%{name}-certhelper
 
 
 %changelog
-* Sun Aug  4 2014 Shad L. Lords <slords@lordsfam.net> - 0.4.5.8-17.2
-- Also add After=network-online.service in systemd files.
-
-* Sat Aug  3 2014 Shad L. Lords <slords@lordsfam.net> - 0.4.5.8-17.1
+* Tue Jul  7 2015 Shad L. Lords <slords@lordsfam.net> - 0.4.5.8-26.v7
+- Add After=network-online.service in systemd files.
 - Mark signed packages finished
 - Keep deleted jobs around
 - Add first cut at git integration
+
+* Thu Jun 18 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-26
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Thu Apr 23 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-25
+- Fix non-SSL shutdown of server and builder.
+
+* Sat Mar 14 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-24
+- Rebuild with fixed patch file.
+
+* Mon Mar  2 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-23
+- Wait max. 60 s for Mock state.log to appear (prev. 15 s).
+- Ignore SSL.Error exceptions in recv().
+
+* Sat Feb 28 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-22
+- Builder upgrade revealed that Mock in Fedora has changed and creates a
+  different state.log file than what has been compatible with Plague Builder.
+  Patch plague-builder state.log reading.
+
+* Sat Feb 21 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-21
+- Let certhelper generate files with sha1 instead of md5.
+
+* Wed Dec 31 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-20
+- Plague Builder does not use Yum directly but Mock (which may
+  or may not use Yum as package tool). (#1156545 use dnf instead of yum)
+
+* Mon Jun 30 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-19
+- Don't package legacy SysV style initscripts (#1113644).
+- Remove RHEL conditional BR.
+- Remove %%defattr usage.
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-18
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
 
 * Thu Aug  8 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-17
 - Fix two-args client build (with rpm path containing '/') by importing
