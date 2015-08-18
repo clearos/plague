@@ -3,11 +3,14 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 Source: http://mschwendt.fedorapeople.org/plague/%{name}-%{version}.tar.bz2
+Patch0: plague-0.4.5.8-pushscript-extras.patch
+Patch1: plague-0.4.5.8-keepjobs.patch
+Patch2: plague-0.4.5.8-scm-updates.patch
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
@@ -79,6 +82,9 @@ the interface to the build server.
 
 %prep
 %setup -q
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
 
 
 %build
@@ -165,6 +171,9 @@ fi
 
 
 %changelog
+* Sat Apr  9 2011 Shad L. Lords <slords@mail.com> - 0.4.5.8-2
+- Apply patches to detect pushed packages, keep packages around, add git as a checkout method
+
 * Tue Aug 10 2010 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-1
 - update to 0.4.5.8 to get rid of patches
 

@@ -1,0 +1,256 @@
+diff -up plague-0.4.5.8/server/PackageJob.py.scm-updates plague-0.4.5.8/server/PackageJob.py
+--- plague-0.4.5.8/server/PackageJob.py.scm-updates	2008-09-21 07:38:41.000000000 -0600
++++ plague-0.4.5.8/server/PackageJob.py	2011-04-09 09:56:01.290335772 -0600
+@@ -37,6 +37,7 @@ from plague import ArchUtils
+ from plague import DebugUtils
+ 
+ CVS_CMD = "/usr/bin/cvs"
++GIT_CMD = "/usr/bin/git"
+ MAKE_CMD = "/usr/bin/make"
+ 
+ DEBUG = False
+@@ -134,7 +135,7 @@ class PackageJob:
+         self.username = username
+         self.starttime = time.time()
+         self.endtime = 0
+-        self.use_cvs = self._server_cfg.get_bool("CVS", "use_cvs")
++
+         self._source = source
+         self.result_dir = None
+         self.srpm_path = None
+@@ -150,7 +151,7 @@ class PackageJob:
+                 "server_work_dir"), "srpm_http_dir")
+ 
+         first_stage = 'initialize'
+-        if self.use_cvs == False:
++        if source.endswith(".src.rpm") or source.find("/") != -1:
+             first_stage = 'prep'
+         pjc = PackageJobController(self, first_stage, 'waiting')
+         pjc.start()
+@@ -289,54 +290,96 @@ class PackageJob:
+         dirname = "%s-%s-%d" % (self.uid, self._source, time.time())
+         tmpdir = self._server_cfg.get_str("Directories", "tmpdir")
+         self.checkout_tmpdir = os.path.join(tmpdir, dirname)
+-        if os.path.exists(self.checkout_tmpdir):
+-            shutil.rmtree(self.checkout_tmpdir, ignore_errors=True)
++        if not self._source.endswith(".src.rpm") and self._source.find("/") == -1:
++            if os.path.exists(self.checkout_tmpdir):
++                shutil.rmtree(self.checkout_tmpdir, ignore_errors=True)
+         os.makedirs(self.checkout_tmpdir)
+ 
+-        # Set up CVS environment
+-        env_args = "CVSROOT='%s'" % self._target_cfg.get_str("CVS", "cvs_root")
+-        cvs_rsh = self._target_cfg.get_str("CVS", "cvs_rsh")
+-        if len(cvs_rsh) > 0:
+-            env_args = "%s CVS_RSH='%s'" % (env_args, cvs_rsh)
+-
+-        # Checkout the module
+-        cmd = 'umask 0022; cd %s; %s %s co -r %s %s' % (self.checkout_tmpdir, env_args, CVS_CMD,
+-                self._source, self.package)
+-        debugprint("%d: Running %s" % (self.uid, cmd))
+-        s, o = commands.getstatusoutput(cmd)
+-        if s != 0:
+-            err_msg = "Error: could not check out %s from %s - output was:\n\n" \
+-                            "%s" % (self._source, self._target_str, o)
+-        else:
+-            # Just in case the 'common' directory didn't come along for the ride,
+-            # get it from CVS
+-            pkg_path = os.path.join(self.checkout_tmpdir, self.package)
+-            if not os.path.exists(os.path.join(pkg_path, "common")):
+-                cmd = 'cd %s; %s %s co common' % (pkg_path, env_args, CVS_CMD)
++        if self._target_cfg.has_option("SCM", "cvs_root"):
++            # Set up CVS environment
++            env_args = "CVSROOT='%s'" % self._target_cfg.get_str("SCM", "cvs_root")
++            cvs_rsh = self._target_cfg.get_str("SCM", "cvs_rsh")
++            if len(cvs_rsh) > 0:
++                env_args = "%s CVS_RSH='%s'" % (env_args, cvs_rsh)
++
++            # Checkout the module
++            cmd = 'umask 0022; cd %s; %s %s co -r %s %s' % (self.checkout_tmpdir, env_args, CVS_CMD,
++                    self._source, self.package)
++            debugprint("%d: Running %s" % (self.uid, cmd))
++            s, o = commands.getstatusoutput(cmd)
++            if s != 0:
++                err_msg = "Error: could not check out %s from %s - output was:\n\n" \
++                                "%s" % (self._source, self._target_str, o)
++            else:
++                # Just in case the 'common' directory didn't come along for the ride,
++                # get it from CVS
++                pkg_path = os.path.join(self.checkout_tmpdir, self.package)
++                if not os.path.exists(os.path.join(pkg_path, "common")):
++                    cmd = 'cd %s; %s %s co common' % (pkg_path, env_args, CVS_CMD)
++                    debugprint("%d: Running %s" % (self.uid, cmd))
++                    s, o = commands.getstatusoutput(cmd)
++                    if s != 0:
++                        err_msg = "Error: could not check out common directory - " \
++                                "output was:\n\n%s" % (self._source, self._target_str, o)
++
++            self.bm.notify_checkout_done(self)
++
++            if err_msg:
++                raise PrepError(err_msg)
++
++        elif self._target_cfg.has_option("SCM", "git_root"):
++            gitroot = self._target_cfg.get_str("SCM", "git_root")
++            gitrepo = "%s/%s" % (gitroot, self.package)
++            commonrepo = os.path.dirname(gitroot) + '/common'
++            self.checkout_path = os.path.basename(self.package)
++            if self.package.endswith('.git'):
++                self.checkout_path = os.path.basename(self.package[:-4])
++                commonrepo = os.path.dirname(gitroot) + '/common.git'
++            sourcedir = '%s/%s' % (self.checkout_tmpdir, self.checkout_path)
++
++            # Checkout the module
++            cmd = 'cd %s; umask 0022; %s clone -n %s %s' % (self.checkout_tmpdir, 
++                GIT_CMD, gitrepo, self.checkout_path)
++            debugprint("%d: Running %s" % (self.uid, cmd))
++            s, o = commands.getstatusoutput(cmd)
++            if s == 0:
++                cmd = 'cd %s; umask 0022; %s reset --hard %s' % (sourcedir, GIT_CMD, self._source)
+                 debugprint("%d: Running %s" % (self.uid, cmd))
+                 s, o = commands.getstatusoutput(cmd)
+-                if s != 0:
+-                    err_msg = "Error: could not check out common directory - " \
+-                            "output was:\n\n%s" % (self._source, self._target_str, o)
+-
+-        self.bm.notify_checkout_done(self)
+-
+-        if err_msg:
+-            raise PrepError(err_msg)
+-            
++
++            if s != 0:
++                err_msg = "Error: could not check out %s from %s - output was:\n\n" \
++                                "%s" % (self._source, self._target_str, o)
++
++            self.bm.notify_checkout_done(self)
++
++            if err_msg:
++                raise PrepError(err_msg)
++        else:
++            self.bm.notify_checkout_done(self)
++
++            raise PrepError( "Error: could not check out %s from %s\n" % 
++                                (self._source, self._target_str) )
++
+         self._set_cur_stage('make_srpm')
+         return False
+ 
+     def _stage_make_srpm(self):
+-        # Map our target to the CVS target alias, since CVS may have
++        # Map our target to the SCM target alias, since SCM may have
+         # different target names than we expose
+-        cvs_target = self._target_dict['target']
+-        cvs_alias = self._target_cfg.get_str("Aliases", "cvs_alias")
+-        if len(cvs_alias) > 0:
+-            cvs_target = cvs_alias
++        srpm_dir = None
++        if self._target_cfg.has_option("SCM", "cvs_root"):
++            cvs_target = self._target_dict['target']
++            cvs_alias = self._target_cfg.get_str("Aliases", "cvs_alias")
++            if len(cvs_alias) > 0:
++                cvs_target = cvs_alias
++
++            self.srpm_path = None
++            srpm_dir = os.path.join(self.checkout_tmpdir, self.package, cvs_target)
++
++        elif self._target_cfg.has_option("SCM", "git_root"):
++            srpm_dir = os.path.join(self.checkout_tmpdir, self.checkout_path)
+ 
+-        self.srpm_path = None
+-        srpm_dir = os.path.join(self.checkout_tmpdir, self.package, cvs_target)
+         if not os.path.exists(srpm_dir):
+             msg = "Error: could not find checkout directory %s for %s.  Sources probably don't exist for this target." % (srpm_dir, self._source)
+             raise PrepError(msg)
+@@ -383,8 +426,8 @@ class PackageJob:
+ 
+     def _stage_prep(self):
+ 
+-        # In SRPM-only mode, cvs_tag is path to the SRPM to build
+-        if self.use_cvs == False:
++        # In SRPM-only mode, _source is path to the SRPM to build
++        if self._source.endswith(".src.rpm") or self._source.find("/") != -1:
+             self.srpm_path = self._source
+ 
+         # fail the job if we can't access the SRPM.  Can happen during
+@@ -425,9 +468,10 @@ class PackageJob:
+         shutil.copy(self.srpm_path, self.srpm_http_path)
+         self.srpm_path = None
+ 
+-        # Remove CVS checkout and make_srpm dirs
+-        if self.use_cvs == True:
+-            shutil.rmtree(self.checkout_tmpdir, ignore_errors=True)
++        # Remove SCM checkout and make_srpm dirs
++        if not self._source.endswith(".src.rpm") and self._source.find("/") == -1:
++            if os.path.exists(self.checkout_tmpdir):
++                shutil.rmtree(self.checkout_tmpdir, ignore_errors=True)
+ 
+         self._request_arch_jobs()
+         self._set_cur_stage('waiting')
+@@ -554,8 +598,9 @@ class PackageJob:
+                     self._event.wait()
+                 self._event.clear()
+         except PrepError, e:
+-            if self.use_cvs == True:
+-                shutil.rmtree(self.checkout_tmpdir, ignore_errors=True)
++            if not self._source.endswith(".src.rpm") and self._source.find("/") == -1:
++                if os.path.exists(self.checkout_tmpdir):
++                    shutil.rmtree(self.checkout_tmpdir, ignore_errors=True)
+             subj = 'Prep Error (Job %s): %s on %s' % (self.uid, self._source, self._target_str)
+             self.email_result(self.username, resultstring=e.msg, subject=subj)
+             self._stage_failed(e.msg)
+diff -up plague-0.4.5.8/server/UserInterface.py.scm-updates plague-0.4.5.8/server/UserInterface.py
+--- plague-0.4.5.8/server/UserInterface.py.scm-updates	2011-04-09 09:55:35.647857242 -0600
++++ plague-0.4.5.8/server/UserInterface.py	2011-04-09 09:56:01.294335535 -0600
+@@ -58,7 +58,7 @@ def validate_package_name(name):
+             return False
+     return True
+ 
+-def validate_cvs_tag(tag):
++def validate_scm_tag(tag):
+     safe_list = ['-', '_', '.', ':', '~', '[', ']', '+']
+     for c in tag:
+         if not (c in safe_list) and not c.isalnum():
+@@ -117,28 +117,8 @@ class UserInterface:
+     def enqueue(self, email, package, source, target_alias, buildreq=None):
+         """ Accept a job to build and stuff it into the job database """
+ 
+-        is_cvs_tag = True
+-        if source.endswith(".src.rpm") or source.find("/") != -1:
+-            is_cvs_tag = False
+-
+         # Do source-type specifc validation
+-        if is_cvs_tag:
+-            if self._cfg.get_bool("CVS", "use_cvs") == False:
+-                self.email_result(email, source, "Error setting up build for %s on "\
+-                        "%s: this server builds SRPMs, not CVS checkouts." % (source, target_alias))
+-                return (-1, "This build server is set up for building SRPMS only.  ", -1)
+-
+-            if not validate_cvs_tag(source):
+-                self.email_result(email, source, "Error setting up build for %s on "\
+-                        "%s: The CVS tag '%s' contained an illegal character.  "\
+-                        "Submit a bug report?" % (package, target_alias, cvs_tag))
+-                return (-1, "The CVS tag contained an illegal character.", -1)
+-        else:
+-            if self._cfg.get_bool("CVS", "use_cvs") == True:
+-                self.email_result(email, source, "Error setting up build for %s on "\
+-                        "%s: this server builds CVS checkouts, not SRPMs." % (source, target_alias))
+-                return (-1, "This build server is set up for building CVS checkouts only.  ", -1)
+-
++        if source.endswith(".src.rpm") or source.find("/") != -1:
+             # We limit the database field to 255 chars
+             if len(source) > 255:
+                 self.email_result(email, source, "Error setting up build for %s on "\
+@@ -150,6 +130,12 @@ class UserInterface:
+                 self.email_result(email, source, "Error setting up build for %s on "\
+                         "%s: The SRPM does not exist, or is not accessible.  Remember to use absolute paths." % (source, target_alias))
+                 return (-1, "SRPM does not exist or is not accessible, remember to use absolute paths.", -1)
++        else:
++            if not validate_scm_tag(source):
++                self.email_result(email, source, "Error setting up build for %s on "\
++                        "%s: The SCM tag '%s' contained an illegal character.  "\
++                        "Submit a bug report?" % (package, target_alias, scm_tag))
++                return (-1, "The SCM tag contained an illegal character.", -1)
+ 
+         if not validate_package_name(package):
+             self.email_result(email, source, "Error setting up build for %s on "\

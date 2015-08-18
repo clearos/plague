@@ -1,0 +1,77 @@
+diff -Nur plague-0.4.5.4-orig/server/BuildMaster.py plague-0.4.5.4/server/BuildMaster.py
+--- plague-0.4.5.4-orig/server/BuildMaster.py	2008-09-08 00:00:53.000000000 +0200
++++ plague-0.4.5.4/server/BuildMaster.py	2008-09-08 00:19:17.000000000 +0200
+@@ -83,6 +83,9 @@
+             self._db_ping_interval = self._cfg.get_int('Database','ping_interval')
+         self._db_ping_job = PeriodicJob(self._db_ping_interval,self._ping_db)
+ 
++        self._cleanup_db_job = PeriodicJob(24*3600,self._cleanup_db)
++        self._finish_signed_job = PeriodicJob(3600,self._finish_signed)
++
+         threading.Thread.__init__(self)
+         self.setName("BuildMaster")
+ 
+@@ -415,6 +418,28 @@
+     def is_paused(self):
+         return self._paused
+ 
++    def _cleanup_db(self):
++        expiretime = int(time.time()-14*24*3600)
++        print "DB cleanup: %d" % expiretime
++        self._cursor.execute("DELETE FROM jobs WHERE (status='failed' OR status='finished') AND endtime<=%d" % expiretime)
++        self._dbcx.commit()
++ 
++    def _finish_signed(self):  # only for Fedora Extras pushscript
++        print "Checking needsign"
++        self._cursor.execute("SELECT * FROM jobs WHERE status='needsign'")
++        self._dbcx.commit()
++        rows = self._dbcx.fetchall(self._cursor)
++        for row in rows:
++            uid = row['uid']
++            target = row['target_distro']+'-'+row['target_target']+'-'+row['target_repo']
++            (n,v,r) = (row['package'],row['rpm_version'],row['rpm_release'])
++            pkgroot = os.path.join(self._repodir,target,n,'%s-%s'%(v,r))
++            if not os.path.exists(pkgroot) or \
++                    os.path.exists(os.path.join(pkgroot,'PUSHED')):
++                print pkgroot, 'PUSHED => mark as finished'
++                self._cursor.execute("UPDATE jobs SET status='finished' WHERE uid=%d" % uid)
++                self._dbcx.commit()
++
+     def run(self):
+         DebugUtils.registerThreadName(self)
+ 
+@@ -441,6 +466,9 @@
+                 self._start_new_jobs()
+                 self._start_requeued_jobs()
+ 
++                self._cleanup_db_job.run()
++                self._finish_signed_job.run()
++
+             last_time = time.time()
+             while not self._have_work() and time.time() <= last_time + 5:
+                 time.sleep(0.25)
+diff -Nur plague-0.4.5.4-orig/server/UserInterface.py plague-0.4.5.4/server/UserInterface.py
+--- plague-0.4.5.4-orig/server/UserInterface.py	2008-09-07 19:02:30.000000000 +0200
++++ plague-0.4.5.4/server/UserInterface.py	2008-09-08 00:09:16.000000000 +0200
+@@ -606,6 +606,7 @@
+ 
+ 
+     def finish(self, uid_list):
++        return (-1, "Feature disabled.")
+         user = AuthedXMLRPCServer.get_authinfo()
+         if not user or not user.own_jobs:
+             return (-1, "Insufficient privileges.")
+diff -Nur plague-0.4.5.4-orig/www/success.psp plague-0.4.5.4/www/success.psp
+--- plague-0.4.5.4-orig/www/success.psp	2008-01-31 15:30:57.000000000 +0100
++++ plague-0.4.5.4/www/success.psp	2008-09-08 00:09:16.000000000 +0200
+@@ -10,8 +10,8 @@
+ try:
+     # show any jobs that have successfully built
+     args = {}
+-    args['status'] = ['add_to_repo', 'needsign', 'repowait', 'repodone']
+-    args['orderby'] = ['status', 'endtime desc']
++    args['status'] = ['add_to_repo', 'finished', 'repowait', 'needsign', 'repodone']
++    args['orderby'] = ['endtime desc']
+     args['maxrows'] = 100
+     (e, msg, jobs) = server.list_jobs(args)
+ except socket.error, e:
