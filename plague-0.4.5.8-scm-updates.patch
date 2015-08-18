@@ -1,6 +1,6 @@
 diff -up plague-0.4.5.8/server/PackageJob.py.scm-updates plague-0.4.5.8/server/PackageJob.py
---- plague-0.4.5.8/server/PackageJob.py.scm-updates	2008-09-21 07:38:41.000000000 -0600
-+++ plague-0.4.5.8/server/PackageJob.py	2011-04-09 09:56:01.290335772 -0600
+--- plague-0.4.5.8/server/PackageJob.py.scm-updates
++++ plague-0.4.5.8/server/PackageJob.py
 @@ -37,6 +37,7 @@ from plague import ArchUtils
  from plague import DebugUtils
  
@@ -173,7 +173,7 @@ diff -up plague-0.4.5.8/server/PackageJob.py.scm-updates plague-0.4.5.8/server/P
              self.srpm_path = self._source
  
          # fail the job if we can't access the SRPM.  Can happen during
-@@ -425,9 +468,10 @@ class PackageJob:
+@@ -431,9 +474,10 @@ class PackageJob:
          shutil.copy(self.srpm_path, self.srpm_http_path)
          self.srpm_path = None
  
@@ -187,7 +187,7 @@ diff -up plague-0.4.5.8/server/PackageJob.py.scm-updates plague-0.4.5.8/server/P
  
          self._request_arch_jobs()
          self._set_cur_stage('waiting')
-@@ -554,8 +598,9 @@ class PackageJob:
+@@ -560,8 +604,9 @@ class PackageJob:
                      self._event.wait()
                  self._event.clear()
          except PrepError, e:
@@ -199,9 +199,8 @@ diff -up plague-0.4.5.8/server/PackageJob.py.scm-updates plague-0.4.5.8/server/P
              subj = 'Prep Error (Job %s): %s on %s' % (self.uid, self._source, self._target_str)
              self.email_result(self.username, resultstring=e.msg, subject=subj)
              self._stage_failed(e.msg)
-diff -up plague-0.4.5.8/server/UserInterface.py.scm-updates plague-0.4.5.8/server/UserInterface.py
---- plague-0.4.5.8/server/UserInterface.py.scm-updates	2011-04-09 09:55:35.647857242 -0600
-+++ plague-0.4.5.8/server/UserInterface.py	2011-04-09 09:56:01.294335535 -0600
+--- plague-0.4.5.8/server/UserInterface.py.scm-updates
++++ plague-0.4.5.8/server/UserInterface.py
 @@ -58,7 +58,7 @@ def validate_package_name(name):
              return False
      return True

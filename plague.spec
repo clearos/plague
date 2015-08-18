@@ -3,24 +3,44 @@ BuildArch: noarch
 Summary: Distributed build system for RPMs
 Name: plague
 Version: 0.4.5.8
-Release: 2%{?dist}
+Release: 26%{?dist}
 License: GPLv2+
 Group: Development/Tools
 #Source: http://fedoraproject.org/projects/plague/releases/%{name}-%{version}.tar.bz2
 Source: http://mschwendt.fedorapeople.org/plague/%{name}-%{version}.tar.bz2
-Patch0: plague-0.4.5.8-pushscript-extras.patch
-Patch1: plague-0.4.5.8-keepjobs.patch
-Patch2: plague-0.4.5.8-scm-updates.patch
 URL: http://www.fedoraproject.org/wiki/Projects/Plague
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+# some fixes for systemd compatibility - it doesn't like double-fork daemons,
+# where the parent process exits before the main PID is known
+Patch0: plague-0.4.5.8-systemd-compat.patch
+# Patch that allows using the sqlite3 module from python-2.5+ stdlib
+Patch1: plague-python25-sqlite.patch
+# Let builder return only .rpm/.log files
+Patch2: plague-0.4.5.8-filter-results.patch
+# Let server not crash in prep stage with RpmUtilsError exception.
+Patch3: plague-0.4.5.8-prep-srpm-error.patch
+# Typo in email error message.
+Patch4: plague-0.4.5.8-emailutils.patch
+# Send a fake request to break out of the serve_forever loops.
+# This may avoid polling select() but causes an SSL error message in the log.
+Patch5: plague-0.4.5.8-wakeup-serve_forever.patch
+# check number of args for build command, to avoid triggered ABRT with
+# an IndexError Python exception
+Patch6: plague-0.4.5.8-client-build-args.patch
+# let certhelper default to sha1 instead of md5 to please openssl
+Patch7: plague-0.4.5.8-md5-sha1-openssl.patch
+# Mock state.log contents have changed again and confuse plague-builder
+Patch8: plague-0.4.5.8-fedora-mock-state.patch
+
+# Mark packages finished with PUSHED
+Patch100: plague-0.4.5.8-pushscript-extras.patch
+# Keep failed jobs around
+Patch101: plague-0.4.5.8-keepjobs.patch
+# Add git scm code (beta)
+Patch102: plague-0.4.5.8-scm-updates.patch
+
 BuildRequires: python
 Requires: createrepo >= 0.4.7
-# get the version of the sqlite api thats available to us
-%if 0%{?rhel}
-Requires: python-sqlite
-%else
-Requires: python-sqlite2
-%endif
 
 Requires: %{name}-common = %{version}-%{release}
 Requires(post): /sbin/chkconfig
@@ -48,7 +68,6 @@ require.
 Summary: Builder daemon for Plague builder slaves
 Group: Development/Tools
 Requires: %{name}-common = %{version}-%{release}
-Requires: yum >= 2.2.1
 Requires: mock >= 0.8
 Requires(post): /sbin/chkconfig
 Requires(post): /sbin/service
@@ -82,17 +101,24 @@ the interface to the build server.
 
 %prep
 %setup -q
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-
+%patch0 -p1 -b .systemd-compat
+%patch1 -p1 -b .sqlite3
+%patch2 -p1 -b .filter-results
+%patch3 -p1 -b .prep-srpm-exception
+%patch4 -p1 -b .emailutils-typo
+%patch5 -p1 -b .server-wakeup-serve_forever
+%patch6 -p1 -b .client-build-args
+%patch7 -p1 -b .md5-sha1-openssl
+%patch8 -p1 -b .fedora-mock-state
+%patch100 -p1 -b .pushscript-extras
+%patch101 -p1 -b .keepjobs
+%patch102 -p1 -b .scm-updates
 
 %build
 make
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT INSTALL="install -p" install
 chmod +x $RPM_BUILD_ROOT%{_bindir}/*
 install -p -D -m 0644 etc/plague-builder.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-builder
@@ -100,10 +126,6 @@ install -p -D -m 0755 etc/plague-builder.init $RPM_BUILD_ROOT%{_initrddir}/%{nam
 install -p -D -m 0644 etc/plague-server.config $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/%{name}-server
 install -p -D -m 0755 etc/plague-server.init $RPM_BUILD_ROOT%{_initrddir}/%{name}-server
 mkdir -p $RPM_BUILD_ROOT/var/lib/plague/builder
-
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 
 %post
@@ -130,7 +152,6 @@ if [ $1 = 0 ]; then
 fi
 
 %files
-%defattr(-, root, root)
 %{_bindir}/%{name}-server
 %dir %{_datadir}/%{name}/server
 %{_datadir}/%{name}/server/*.py*
@@ -141,7 +162,6 @@ fi
 %doc www
 
 %files common
-%defattr(-, root, root)
 %doc README ChangeLog
 %dir %{_sysconfdir}/%{name}
 %dir %{_datadir}/%{name}
@@ -149,7 +169,6 @@ fi
 /usr/lib/python?.?/site-packages/%{name}/*.py*
 
 %files builder
-%defattr(-, root, root)
 %{_bindir}/%{name}-builder
 %dir %{_datadir}/%{name}/builder
 %{_datadir}/%{name}/builder/*.py*
@@ -161,18 +180,111 @@ fi
 %attr(0755, plague-builder, plague-builder) /var/lib/plague/builder
 
 %files client
-%defattr(-, root, root)
 %{_bindir}/%{name}-client
 
 %files utils
-%defattr(-, root, root)
 %{_bindir}/%{name}-user-manager
 %{_bindir}/%{name}-certhelper
 
 
 %changelog
-* Sat Apr  9 2011 Shad L. Lords <slords@mail.com> - 0.4.5.8-2
-- Apply patches to detect pushed packages, keep packages around, add git as a checkout method
+* Tue Jul  7 2015 Shad L. Lords <slords@lordsfam.net> - 0.4.5.8-26.v6
+- Mark signed packages finished
+- Keep deleted jobs around
+- Add first cut at git integration
+
+* Thu Jun 18 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-26
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Thu Apr 23 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-25
+- Fix non-SSL shutdown of server and builder.
+
+* Sat Mar 14 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-24
+- Rebuild with fixed patch file.
+
+* Mon Mar  2 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-23
+- Wait max. 60 s for Mock state.log to appear (prev. 15 s).
+- Ignore SSL.Error exceptions in recv().
+
+* Sat Feb 28 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-22
+- Builder upgrade revealed that Mock in Fedora has changed and creates a
+  different state.log file than what has been compatible with Plague Builder.
+  Patch plague-builder state.log reading.
+
+* Sat Feb 21 2015 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-21
+- Let certhelper generate files with sha1 instead of md5.
+
+* Wed Dec 31 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-20
+- Plague Builder does not use Yum directly but Mock (which may
+  or may not use Yum as package tool). (#1156545 use dnf instead of yum)
+
+* Mon Jun 30 2014 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-19
+- Don't package legacy SysV style initscripts (#1113644).
+- Remove RHEL conditional BR.
+- Remove %%defattr usage.
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-18
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Thu Aug  8 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-17
+- Fix two-args client build (with rpm path containing '/') by importing
+  rpmUtils.transaction correctly.
+
+* Thu Aug  8 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-16
+- Avoid IndexError exception in client build command.
+
+* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-15
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Mon Apr 22 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-14
+- Patch server and builder to send a fake request in SIGTERM exit handler
+  to end the serve_forever loop.
+- Also add Requires=rpcbind.service in systemd files.
+- Fix typo in EmailUtils.py error message.
+
+* Sat Mar 16 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-13
+- Let server not crash in prep stage with RpmUtilsError exception.
+
+* Thu Mar  7 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-12
+- Fix the patch in -11.
+
+* Mon Mar  4 2013 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-11
+- Since new Mock creates additional result files "available_pkgs" and
+  "installed_pkgs", but the Plague Server only wants .rpm/.log files,
+  ignore anything else.
+
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-10
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Thu Aug 30 2012 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-9
+- Introduce new systemd-rpm macros in plague spec file (#850272), but
+  don't add conditionals for "Fedora 17 and older".
+
+* Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-8
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Fri Feb 17 2012 Toshio Kuratomi <toshio@fedoraproject.org> - 0.4.5.8-7
+- Apply the patch for real
+
+* Fri Feb 17 2012 Toshio Kuratomi <toshio@fedoraproject.org> - 0.4.5.8-6
+- Patch to allow plague to run with the sqlite3 module from the python-2.5+ stdlib
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Wed Nov  9 2011 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-4
+- drop old chkconfig/service usage and deps
+- add systemd package deps also to -builder package
+- s/multiuser/multi-user/ in systemd unit files
+- start After=rpcbind.service 
+
+* Tue Nov  8 2011 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-3
+- Some fixes for systemd compatibility, e.g. patch daemonize.py double-fork
+  to let parent die only after second child has written PID file.
+- Add systemd unit files and related package scriptlets.
+
+* Wed Feb 09 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.5.8-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
 * Tue Aug 10 2010 Michael Schwendt <mschwendt@fedoraproject.org> - 0.4.5.8-1
 - update to 0.4.5.8 to get rid of patches
@@ -381,7 +493,7 @@ fi
     o Make repo scripts actually work
     o Don't traceback when cleaning up job files if we have none
 
-* Mon Aug 19 2005 Dan Williams <dcbw@redhat.com> 0.3.3-1
+* Fri Aug 19 2005 Dan Williams <dcbw@redhat.com> 0.3.3-1
 - Version 0.3.3
     o Add repo script support
     o Fix double-slashes in log URL (Ignacio Vazquez-Abrams)

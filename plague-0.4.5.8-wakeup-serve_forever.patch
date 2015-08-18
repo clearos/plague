@@ -1,0 +1,84 @@
+diff -Nur plague-0.4.5.8-orig/builder/builder.py plague-0.4.5.8/builder/builder.py
+--- plague-0.4.5.8-orig/builder/builder.py	2010-05-05 12:45:20.000000000 +0200
++++ plague-0.4.5.8/builder/builder.py	2015-04-23 19:54:45.938714486 +0200
+@@ -793,14 +793,22 @@
+ 
+ 
+ bserver = None
++bserver_addr = None
+ 
+ def exit_handler(signum, frame):
+-    global bserver
++    global bserver, bserver_addr
+     log("Received SIGTERM, quitting...\n")
+     bserver.stop()
+ 
++    (host,port) = bserver_addr
++    print "Sending fake request to %s:%s to trigger shutdown..." % (host, port)
++    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
++    s.connect((host, port))
++    s.send('WANNAQUIT')
++    s.close()
++
+ def main():
+-    global bserver
++    global bserver, bserver_addr
+ 
+     usage = "Usage: %s  [-p <pidfile>] [-l <logfile>] [-d] -c <configfile>" % sys.argv[0]
+     parser = OptionParser(usage=usage)
+@@ -883,6 +891,7 @@
+             bserver = AuthedXMLRPCServer.AuthedSSLXMLRPCServer((hostname, xmlrpc_port), None, certs)
+         else:
+             bserver = AuthedXMLRPCServer.AuthedXMLRPCServer((hostname, xmlrpc_port), None)
++        bserver_addr = (hostname,xmlrpc_port)
+     except socket.error, e:
+         if e[0] == 98:
+             log("Error: couldn't bind to address '%s:%s'.  "  \
+diff -Nur plague-0.4.5.8-orig/common/SSLConnection.py plague-0.4.5.8/common/SSLConnection.py
+--- plague-0.4.5.8-orig/common/SSLConnection.py	2010-08-10 17:19:22.000000000 +0200
++++ plague-0.4.5.8/common/SSLConnection.py	2015-04-23 19:51:52.547936869 +0200
+@@ -149,6 +149,8 @@
+             except SSL.SysCallError, (e, err):
+                 time.sleep(0.2)
+                 return None
++            except SSL.Error:
++                return None
+         return None
+ 
+ class PlgFileObject(socket._fileobject):
+diff -Nur plague-0.4.5.8-orig/server/main.py plague-0.4.5.8/server/main.py
+--- plague-0.4.5.8-orig/server/main.py	2008-01-31 14:28:05.000000000 +0100
++++ plague-0.4.5.8/server/main.py	2015-04-23 19:53:18.341373651 +0200
+@@ -62,14 +62,22 @@
+ #################################################################
+ 
+ bm_server = None
++bm_server_addr = None
+ 
+ def exit_handler(signum, frame):
+-    global bm_server
++    global bm_server, bm_server_addr
+     print "Received SIGTERM, quitting..."
+     bm_server.stop()
+ 
++    (host,port) = bm_server_addr
++    print "Sending fake request to %s:%s to trigger shutdown..." % (host, port)
++    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
++    s.connect((host, port))
++    s.send('WANNAQUIT')
++    s.close()
++
+ def main():
+-    global bm_server
++    global bm_server, bm_server_addr
+ 
+     usage = "Usage: %s [-p <pidfile>] [-l <logfile>] [-d] [-c <configfile>]" % sys.argv[0]
+     parser = OptionParser(usage=usage)
+@@ -144,6 +152,7 @@
+         else:
+             ui = UserInterfaceNoAuth(builder_manager, bm, dbm, cfg)
+             bm_server = AuthedXMLRPCServer.AuthedXMLRPCServer((hostname, port))
++        bm_server_addr = (hostname,port)
+     except socket.error, e:
+         if e[0] == 98:      # Address already in use
+             print "Error: couldn't bind to address '%s:%s'.  Is the server already running?" % (hostname, port)

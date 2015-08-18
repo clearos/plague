@@ -1,0 +1,18 @@
+diff -Nur plague-0.4.5.8-orig/server/PackageJob.py plague-0.4.5.8/server/PackageJob.py
+--- plague-0.4.5.8-orig/server/PackageJob.py	2008-09-21 15:38:41.000000000 +0200
++++ plague-0.4.5.8/server/PackageJob.py	2013-03-16 13:33:50.920680600 +0100
+@@ -394,7 +394,13 @@
+             raise PrepError(msg)
+ 
+         ts = rpmUtils.transaction.initReadOnlyTransaction()
+-        hdr = rpmUtils.miscutils.hdrFromPackage(ts, self.srpm_path)
++        try:
++            hdr = rpmUtils.miscutils.hdrFromPackage(ts, self.srpm_path)
++        except rpmUtils.RpmUtilsError, e:
++            msg = """RpmUtilsError: %s
++    Package: %s
++""" % (e, self.srpm_path)
++            raise PrepError(msg)
+         self.name = hdr['name']
+         self.epoch = hdr['epoch']
+         if not self.epoch:

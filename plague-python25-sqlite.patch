@@ -1,0 +1,96 @@
+Index: plague-0.4.5.8/server/DBManager.py
+===================================================================
+--- plague-0.4.5.8.orig/server/DBManager.py
++++ plague-0.4.5.8/server/DBManager.py
+@@ -269,13 +269,20 @@ db_engines = {
+ # Import our database engines, if any engine
+ # isn't present, remove its class entry from
+ # the db engine dict
++
++
++# Note: We probably want to port to psqlite2.dbapi2 and sqlite3.dbapi2 and
++# remove support for the original sqlite python bindings.
+ try:
+-    import sqlite
+-except ImportError, e:
++    import pysqlite2._sqlite as sqlite
++except ImportError:
+     try:
+-        import pysqlite2._sqlite as sqlite
+-    except ImportError, e:
+-        db_engines['sqlite'] = None
++        import _sqlite3 as sqlite
++    except ImportError:
++        try:
++            import sqlite
++        except ImportError:
++            db_engines['sqlite'] = None
+ 
+ try:
+     import pgdb
+Index: plague-0.4.5.8/server/User.py
+===================================================================
+--- plague-0.4.5.8.orig/server/User.py
++++ plague-0.4.5.8/server/User.py
+@@ -14,11 +14,17 @@
+ #
+ # Copyright 2005 Dan Williams <dcbw@redhat.com> and Red Hat, Inc.
+ 
++# Note: We probably want to port to psqlite2.dbapi2 and sqlite3.dbapi2 and
++# remove support for the original sqlite python bindings.
+ try:
+-    import sqlite
+-except ImportError, e:
+     import pysqlite2._sqlite as sqlite
++except ImportError:
++    try:
++        import _sqlite3 as sqlite
++    except ImportError:
++        import sqlite
+ 
++import os
+ import sys
+ sys.path.append('/usr/share/plague/server')
+ from DBManager import ResultSet
+Index: plague-0.4.5.8/utils/user-manager.py
+===================================================================
+--- plague-0.4.5.8.orig/utils/user-manager.py
++++ plague-0.4.5.8/utils/user-manager.py
+@@ -18,10 +18,17 @@
+ 
+ 
+ import sys, os
++
++
++# Note: We probably want to port to psqlite2.dbapi2 and sqlite3.dbapi2 and
++# remove support for the original sqlite python bindings.
+ try:
+-    import sqlite
+-except ImportError, e:
+     import pysqlite2._sqlite as sqlite
++except ImportError:
++    try:
++        import _sqlite3 as sqlite
++    except ImportError:
++        import sqlite
+ sys.path.append('/usr/share/plague/server')
+ from DBManager import ResultSet
+ 
+@@ -134,7 +141,7 @@ class UserManager:
+         elif cap == '+':
+             return 1
+         else:
+-            raise UserManagerException("Invalid format '%s', privileges must begin with + or -." % option)
++            raise UserManagerException("Invalid format '%s', privileges must begin with + or -." % cap)
+ 
+     def mod_user(self, args):
+         if len(args) < 1:
+@@ -165,7 +172,7 @@ class UserManager:
+             elif priv == 'server_admin':
+                 server_admin = self._cap_to_num(opt[0])
+             else:
+-                raise UserManagerException("The privilege '%s' is unknown." % privilege)
++                raise UserManagerException("The privilege '%s' is unknown." % priv)
+ 
+         self.curs.execute('UPDATE users SET own_jobs=%d, job_admin=%d, user_admin=%d, server_admin=%d' \
+                     ' WHERE email="%s"' % (own_jobs, job_admin, user_admin, server_admin, email))

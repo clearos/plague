@@ -1,0 +1,11 @@
+diff -Nur plague-0.4.5.8-orig/server/EmailUtils.py plague-0.4.5.8/server/EmailUtils.py
+--- plague-0.4.5.8-orig/server/EmailUtils.py	2005-10-05 19:42:49.000000000 +0200
++++ plague-0.4.5.8/server/EmailUtils.py	2013-04-22 15:18:51.376472909 +0200
+@@ -31,6 +31,6 @@
+         s.sendmail(sender, [to], msg.as_string())
+         s.close()
+     except socket.error, e:
+-        print "ERROR: could send email to '%s' with subject '%s'.  Error: '%s'" % (to, subject, e)
++        print "ERROR: could not send email to '%s' with subject '%s'.  Error: '%s'" % (to, subject, e)
+         
+ 
